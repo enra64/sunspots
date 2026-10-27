@@ -87,3 +87,25 @@ async def test_streamed_body_over_limit_without_content_length(server):
         with pytest.raises(ProviderLimitError, match="larger than 250"):
             await f.get(str(srv.make_url("/chunked")), max_bytes=250)
         assert len(await f.get(str(srv.make_url("/chunked")), max_bytes=1000)) == 400
+
+
+async def test_ignored_range_on_a_small_file_never_returns_the_wrong_bytes(socket_enabled):
+    """A 200 answer to a ranged request starts at byte 0: wrong data for any other offset."""
+    body = bytes(range(64))
+
+    async def handler(request: web.Request):
+        return web.Response(body=body)  # ignores Range
+
+    app = web.Application()
+    app.router.add_get("/small", handler)
+    srv = TestServer(app)
+    await srv.start_server()
+    try:
+        async with aiohttp.ClientSession() as session:
+            f = RateLimitedFetcher(session, "ua", min_interval=0)
+            url = str(srv.make_url("/small"))
+            with pytest.raises(ProviderLimitError):
+                await f.get(url, start=10, length=64, max_bytes=64)
+            assert await f.get(url, start=0, length=64, max_bytes=64) == body
+    finally:
+        await srv.close()

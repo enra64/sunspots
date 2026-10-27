@@ -5,7 +5,7 @@ how much sun will it get today? Sunspots answers this in Home Assistant from pub
 and the position of the sun. No account, no cloud service: everything is calculated and stored
 in your own Home Assistant.
 
-> **Status: 1.0.0 candidate (pre-release).** Sun/shade geometry, the cloud-aware forecast, the shadow map and the
+> **Status: pre-release.** Sun/shade geometry, the cloud-aware forecast, the shadow map and the
 > dashboard card work; accuracy has not been validated against real observations yet. Accuracy depends on how well your area is mapped,
 > see [Accuracy](#accuracy).
 
@@ -36,7 +36,7 @@ Per spot (one device each):
 
 Hub: `sensor.sunspots_sunny_spots` counts sunny spots (weather-aware where configured); its `next_window` attribute names the next sunny window across all spots.
 
-**Actions** (target a spot's `_sunny` entity): `sunspots.get_sun_forecast` (sunlit intervals for a
+**Actions** (target a spot's `_sunny` entity; targeting the spot's device works too and runs each action once): `sunspots.get_sun_forecast` (sunlit intervals for a
 day, returns a response), `sunspots.refresh_buildings`, `sunspots.set_building_height`,
 `sunspots.calibrate`, `sunspots.render_shadow_map` (returns an SVG for any time, `theme: light|dark`).
 
@@ -103,8 +103,9 @@ default. A repair issue appears when a spot has mostly guessed heights. See
   (the *Data quality* sensor and `docs/accuracy.md` explain what the model cannot see), then use *Corrections*.
 - **"Some spots have mostly guessed building heights" repair**: the area has few measured heights; set the
   heights of the tallest nearby buildings under *Reconfigure → Corrections*.
-- **"Building data could not be loaded"**: Overture's tile service is experimental. Sunspots keeps the cached
-  data; retry later with `sunspots.refresh_buildings` or allow Overpass in the settings.
+- **"Building data for <spot> could not be loaded"**: Overture's tile service is experimental. A spot with
+  cached data keeps using it; a spot without data stays unavailable and is retried every 15 minutes. Retry
+  yourself with *Reconfigure → Refresh building data* (or `sunspots.refresh_buildings`), or allow Overpass in the settings.
 - **Weather-aware sensor never turns on**: check the weather entity (and its `cloud_coverage` or condition);
   the limit is in the settings.
 - Not modelled: trees, awnings, terrain slopes, roof shapes, clouds beyond your weather entity's value.

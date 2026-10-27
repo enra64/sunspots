@@ -6,7 +6,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from custom_components.sunspots.const import DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE
+from custom_components.sunspots.const import DOMAIN
+from custom_components.sunspots.issues import buildings_issue_id
 
 from .conftest import make_entry, spot_data
 
@@ -110,8 +111,10 @@ async def test_failed_first_load_leaves_spot_unavailable_and_creates_issue(hass,
     await setup(hass, entry)
     assert entry.state is ConfigEntryState.LOADED  # one bad spot never blocks the hub
     assert hass.states.get("binary_sensor.schneiderei_sunny").state == "unavailable"
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE)
-    assert issue is not None and not issue.is_fixable
+    for subentry_id, subentry in entry.subentries.items():
+        issue = ir.async_get(hass).async_get_issue(DOMAIN, buildings_issue_id(subentry_id))
+        assert issue is not None and not issue.is_fixable
+        assert issue.translation_placeholders["spot"] == subentry.title
 
 
 async def test_many_spots_load_staggered_in_background(hass, fake_fetcher, freezer):

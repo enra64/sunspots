@@ -1,6 +1,6 @@
 [project]
 name = "sunspots"
-version = "1.1.1"
+version = "1.2.0"
 description = "Home Assistant integration: is this outdoor spot in the sun?"
 requires-python = ">=3.14"
 license = "Apache-2.0"

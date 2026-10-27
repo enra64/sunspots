@@ -5,9 +5,9 @@ from unittest.mock import patch
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from custom_components.sunspots.const import DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE, ISSUE_LOW_COVERAGE
+from custom_components.sunspots.const import DOMAIN, ISSUE_LOW_COVERAGE
 from custom_components.sunspots.diagnostics import async_get_config_entry_diagnostics
-from custom_components.sunspots.issues import async_update_coverage_issue
+from custom_components.sunspots.issues import async_update_coverage_issue, buildings_issue_id
 from tests.core.helpers import unproject
 
 from .conftest import LAT, LON, make_entry, spot_data
@@ -133,9 +133,12 @@ def overpass_payload(entry_lat=LAT, entry_lon=LON):
 
 async def test_overture_failure_without_permission_never_calls_overpass(hass, fake_fetcher):
     fake_fetcher.fail_with = 503
-    await setup(hass, make_entry())
+    entry = make_entry()
+    await setup(hass, entry)
     assert fake_fetcher.posted == []
-    issue = ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE)
+    issue = ir.async_get(hass).async_get_issue(
+        DOMAIN, buildings_issue_id(next(iter(entry.subentries)))
+    )
     assert issue is not None
 
 

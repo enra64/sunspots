@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time as time_module
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, NoReturn
@@ -24,7 +26,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .buildings_service import BuildingsService, ChunkSet
-from .const import DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE, MAP_PAYLOAD_BUDGET, REFRESH_INTERVAL_DAYS
+from .const import DOMAIN, MAP_PAYLOAD_BUDGET, REFRESH_INTERVAL_DAYS
 from .core.buildings import derive_buildings
 from .core.const import ALGO_VERSION, SUN_DISC_MARGIN_DEG
 from .core.corrections import (
@@ -51,6 +53,7 @@ from .core.solar import sun_position
 from .core.spot import SpotModel, build_spot_model, final_horizon
 from .core.timeline import Timeline, compute_timeline, is_sunny
 from .data import HubSettings, SpotSettings, spot_store
+from .issues import async_create_buildings_issue, async_delete_buildings_issue
 
 if TYPE_CHECKING:
     from .data import SunspotsConfigEntry
@@ -204,6 +207,8 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         self._model: SpotModel
         self._meta: SpotMeta
         self.timings: dict[str, float] = {}
+        self._inflight: dict[tuple[str, ...], asyncio.Task[Any]] = {}
+        self._unavailable_logged = False
 
     # ------------------------------------------------------------------ loading
     async def async_initialize(self) -> bool:
@@ -211,8 +216,15 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         try:
             await self._load()
         except UpdateFailed as err:
-            _LOGGER.warning("Spot %s could not be loaded: %s", self.settings.name, err)
+            if self._shutdown_requested:
+                return False
+            # warn once; the 15-minute retries log at debug level until the spot recovers
+            log = _LOGGER.debug if self._unavailable_logged else _LOGGER.warning
+            log("Spot %s could not be loaded: %s", self.settings.name, err)
+            self._unavailable_logged = True
             self.async_start_retry()
+            return False
+        if self._shutdown_requested:  # unloaded while loading (a retry that outlived the entry)
             return False
         self._start_timers()
         return True
@@ -280,14 +292,8 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         self._meta = meta
 
     def _raise_unavailable(self, err: ProviderError) -> NoReturn:
-        ir.async_create_issue(
-            self.hass,
-            DOMAIN,
-            ISSUE_BUILDINGS_UNAVAILABLE,
-            is_fixable=False,
-            severity=ir.IssueSeverity.ERROR,
-            translation_key=ISSUE_BUILDINGS_UNAVAILABLE,
-            translation_placeholders={"error": str(err)},
+        async_create_buildings_issue(
+            self.hass, self.subentry_id, self.settings.name, str(err), ir.IssueSeverity.ERROR
         )
         raise UpdateFailed(f"building data unavailable: {err}") from err
 
@@ -412,9 +418,8 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
     def _schedule(self, data: SpotData, now: datetime) -> None:
         if self._unsub_point:
             self._unsub_point()
-        _, window_end = local_window(now)
-        midnight = window_end - timedelta(days=1)
-        when = midnight
+        # next local midnight (computed in local time: a UTC "minus one day" is off on DST days)
+        _, when = local_day_bounds(now.astimezone(dt_util.get_default_time_zone()).date())
         change = data.timeline.next_change(now)
         if change is not None and change < when:
             when = change
@@ -543,6 +548,30 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         await self._apply_corrections(model_changed=False)
         return entry.id
 
+    async def async_run_once[T](
+        self, key: tuple[str, ...], job: Callable[[], Coroutine[Any, Any, T]]
+    ) -> T:
+        """Run ``job`` once for concurrent calls with the same key.
+
+        Both binary sensors of a spot carry the entity actions, so an action aimed at the
+        spot's device or area reaches this coordinator twice within one service call.
+        Callers key by the call's context id and arguments; the second caller shares the
+        first one's result instead of applying the change again.
+        """
+        task = self._inflight.get(key)
+        if task is None:
+
+            async def run() -> T:
+                try:
+                    return await job()
+                finally:
+                    self._inflight.pop(key, None)
+
+            task = self.hass.async_create_task(run(), eager_start=False)
+            self._inflight[key] = task
+        result: T = await task
+        return result
+
     # ------------------------------------------------------------------ refresh
     async def async_refresh_buildings(self) -> None:
         """Refetch from the provider (explicit user action or the 90-day refresh)."""
@@ -552,21 +581,15 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
                 params.lat, params.lon, params.radius, refresh=True
             )
         except ProviderError as err:
-            ir.async_create_issue(
-                self.hass,
-                DOMAIN,
-                ISSUE_BUILDINGS_UNAVAILABLE,
-                is_fixable=False,
-                severity=ir.IssueSeverity.WARNING,
-                translation_key=ISSUE_BUILDINGS_UNAVAILABLE,
-                translation_placeholders={"error": str(err)},
+            async_create_buildings_issue(
+                self.hass, self.subentry_id, self.settings.name, str(err), ir.IssueSeverity.WARNING
             )
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="refresh_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
-        ir.async_delete_issue(self.hass, DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE)
+        async_delete_buildings_issue(self.hass, self.subentry_id)
         await self._rebuild(chunkset)
         self._dirty = True
         await self.async_refresh()
@@ -664,7 +687,7 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         self._unsub_retry = None
         if await self.async_initialize():
             _LOGGER.info("Spot %s recovered and is available again", self.settings.name)
-            ir.async_delete_issue(self.hass, DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE)
+            async_delete_buildings_issue(self.hass, self.subentry_id)
             await self.async_refresh()
 
     async def async_shutdown(self) -> None:

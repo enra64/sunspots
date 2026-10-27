@@ -341,3 +341,26 @@ async def test_hub_reconfigure_updates_options_and_reloads(hass: HomeAssistant, 
     assert done["type"] is FlowResultType.ABORT and done["reason"] == "reconfigure_successful"
     await hass.async_block_till_done(wait_background_tasks=True)
     assert entry.options["radius"] == 200 and entry.runtime_data.settings.observer_height == 1.5
+
+
+async def test_reconfigure_keeps_only_real_overrides(hass: HomeAssistant, fake_fetcher):
+    entry = make_entry()
+    await setup(hass, entry)
+    result = await start_reconfigure(hass, entry)
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"], {"next_step_id": "settings"}
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        result["flow_id"],
+        {
+            "name": "Renamed",
+            "location": {"latitude": LAT, "longitude": LON},
+            "radius": 250,
+            "observer_height": 1.2,
+            "ground_offset": 0,
+        },
+    )
+    await finish_progress(hass, result)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    data = next(iter(entry.subentries.values())).data
+    assert set(data) == {"latitude", "longitude"}  # nothing pinned: hub settings keep applying

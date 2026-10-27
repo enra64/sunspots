@@ -198,6 +198,7 @@
         "no_building_at_location": "No building found within 25 m of that point."
       },
       "abort": {
+        "spot_not_loaded": "The spot's building data is not loaded yet. Use “Refresh building data” in the Reconfigure menu, or try again later.",
         "entry_not_loaded": "Sunspots is not running. Check the integration page and try again.",
         "fetch_failed": "Building data could not be loaded: {error}",
         "already_configured": "A spot at this location already exists.",
@@ -260,8 +261,8 @@
       "description": "For {spots}, less than {threshold}% of the skyline comes from measured building heights. Shade times may be off. Open the spot's Reconfigure menu, then Corrections, to set the heights of nearby buildings, or compare with what you see and use the calibrate action."
     },
     "buildings_unavailable": {
-      "title": "Building data could not be loaded",
-      "description": "Sunspots could not fetch building data: {error}. It keeps working from cached data. Try again later, or allow Overpass in the Sunspots options as an alternative source (it sends spot coordinates to a public server)."
+      "title": "Building data for {spot} could not be loaded",
+      "description": "Sunspots could not fetch building data for {spot}: {error}. If the spot already has building data it keeps using it; otherwise it stays unavailable and Sunspots tries again every 15 minutes. You can also use “Refresh building data” in the spot's Reconfigure menu, or allow Overpass in the Sunspots options as an alternative source (it sends spot coordinates to a public server)."
     }
   },
   "exceptions": {

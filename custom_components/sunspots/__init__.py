@@ -40,7 +40,7 @@ from .data import (
     spot_store,
 )
 from .forecast_manager import ForecastManager
-from .issues import async_update_coverage_issue
+from .issues import async_delete_buildings_issue, async_update_coverage_issue
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -138,7 +138,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunspotsConfigEntry) -> 
         entry.async_create_background_task(
             hass, _refresh_staggered(hass, entry, loaded[INLINE_SPOTS:]), "sunspots initial refresh"
         )
-    for coordinator in loaded:
+    for coordinator in coordinators:  # spots that recover from a failed load count too
         entry.async_on_unload(
             coordinator.async_add_listener(lambda: async_update_coverage_issue(hass, entry))
         )
@@ -163,6 +163,7 @@ async def _async_update_listener(hass: HomeAssistant, entry: SunspotsConfigEntry
     current = {s.subentry_id for s in entry.subentries.values() if s.subentry_type == SUBENTRY_SPOT}
     for subentry_id in set(entry.runtime_data.spots) - current:
         await spot_store(hass, subentry_id).async_remove()
+        async_delete_buildings_issue(hass, subentry_id)
     await hass.config_entries.async_reload(entry.entry_id)
 
 
@@ -174,6 +175,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: SunspotsConfigEntry) ->
     """Wipe all storage when the hub is removed."""
     for subentry in entry.subentries.values():
         await spot_store(hass, subentry.subentry_id).async_remove()
+        async_delete_buildings_issue(hass, subentry.subentry_id)
     await hass.data[DATA_DOMAIN].tiles.async_remove_all()
 
 

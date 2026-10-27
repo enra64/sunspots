@@ -33,6 +33,13 @@ async def menu(hass, entry, sub, choice):
     )
 
 
+def suggested(result):
+    """Suggested (pre-filled but clearable) values of a form."""
+    return {
+        str(k): (k.description or {}).get("suggested_value") for k in result["data_schema"].schema
+    }
+
+
 async def test_partly_threshold_below_sunny_is_rejected(hass):
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     result = await hass.config_entries.flow.async_configure(
@@ -47,8 +54,7 @@ async def test_options_form_prefills_configured_weather_entity(hass, fake_fetche
     await setup(hass, entry)
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["type"] is FlowResultType.FORM
-    defaults = {str(k): k.default() for k in result["data_schema"].schema if hasattr(k, "default")}
-    assert defaults["weather_entity"] == "weather.home"
+    assert suggested(result)["weather_entity"] == "weather.home"
     # submitting the pre-filled form keeps the entity
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {**HUB_INPUT, "weather_entity": "weather.home"}
@@ -76,8 +82,7 @@ async def test_reconfigure_settings_with_spot_weather_entity(hass, fake_fetcher)
     sub = next(iter(entry.subentries.values()))
     form = await menu(hass, entry, sub, "settings")
     assert form["step_id"] == "settings"
-    defaults = {str(k): k.default() for k in form["data_schema"].schema if hasattr(k, "default")}
-    assert defaults["weather_entity"] == "weather.garden"
+    assert suggested(form)["weather_entity"] == "weather.garden"
     result = await hass.config_entries.subentries.async_configure(
         form["flow_id"],
         {

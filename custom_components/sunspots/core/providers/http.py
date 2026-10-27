@@ -6,7 +6,6 @@ import asyncio
 import time
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable
-from typing import Any
 from urllib.parse import urlsplit
 
 import aiohttp
@@ -53,12 +52,10 @@ class RateLimitedFetcher:
                 raise ValueError("length required with start")
             headers["Range"] = f"bytes={start}-{start + length - 1}"
             max_bytes = min(max_bytes, length)
-        return await self._request("GET", url, headers, None, max_bytes, ranged=start is not None)
+        return await self._request("GET", url, headers, None, max_bytes, start=start)
 
     async def post(self, url: str, data: str, *, max_bytes: int) -> bytes:
-        return await self._request(
-            "POST", url, {"User-Agent": self._ua}, data, max_bytes, ranged=False
-        )
+        return await self._request("POST", url, {"User-Agent": self._ua}, data, max_bytes)
 
     async def _throttle(self, host: str) -> None:
         now = self._clock()
@@ -81,7 +78,7 @@ class RateLimitedFetcher:
         data: str | None,
         max_bytes: int,
         *,
-        ranged: bool,
+        start: int | None = None,
     ) -> bytes:
         host = urlsplit(url).netloc
         async with self._lock:
@@ -89,7 +86,7 @@ class RateLimitedFetcher:
             for attempt in range(MAX_RETRIES + 1):
                 await self._throttle(host)
                 try:
-                    return await self._once(method, url, headers, data, max_bytes, ranged)
+                    return await self._once(method, url, headers, data, max_bytes, start)
                 except HttpStatusError as err:
                     if err.status not in _RETRY_STATUSES or attempt == MAX_RETRIES:
                         raise
@@ -109,7 +106,7 @@ class RateLimitedFetcher:
         headers: dict[str, str],
         data: str | None,
         max_bytes: int,
-        ranged: bool,
+        start: int | None,
     ) -> bytes:
         timeout = aiohttp.ClientTimeout(total=TIMEOUT_S)
         async with self._session.request(
@@ -121,12 +118,12 @@ class RateLimitedFetcher:
                 if retry_after and retry_after.isdigit():
                     err.retry_after = float(retry_after)  # type: ignore[attr-defined]
                 raise err
-            if ranged and resp.status == 200:
-                # Server ignored Range: refuse rather than download a whole archive.
-                length: Any = resp.headers.get("Content-Length")
-                if length is None or int(length) > max_bytes:
-                    raise ProviderLimitError("server ignored Range request")
             declared = resp.headers.get("Content-Length")
+            # Server ignored Range: the body starts at byte 0, so it only answers a request for
+            # the start of a small, sized file (size cap below); never download a whole archive.
+            ignored_range = start is not None and resp.status == 200
+            if ignored_range and (start != 0 or not (declared and declared.isdigit())):
+                raise ProviderLimitError("server ignored Range request")
             if declared and declared.isdigit() and int(declared) > max_bytes:
                 raise ProviderLimitError(f"response larger than {max_bytes} bytes")
             body = bytearray()

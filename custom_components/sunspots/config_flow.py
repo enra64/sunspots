@@ -105,11 +105,15 @@ def _hub_schema(defaults: dict[str, Any]) -> vol.Schema:
             CONF_CLOUD_THRESHOLD_PARTLY, default=defaults[CONF_CLOUD_THRESHOLD_PARTLY]
         ): _number(0, 100, 5, "%"),
     }
-    weather = vol.Optional(CONF_WEATHER_ENTITY)
-    if defaults.get(CONF_WEATHER_ENTITY):
-        weather = vol.Optional(CONF_WEATHER_ENTITY, default=defaults[CONF_WEATHER_ENTITY])
-    schema[weather] = EntitySelector(EntitySelectorConfig(domain="weather"))
+    schema[_optional_entity(defaults.get(CONF_WEATHER_ENTITY))] = EntitySelector(
+        EntitySelectorConfig(domain="weather")
+    )
     return vol.Schema(schema)
+
+
+def _optional_entity(current: str | None) -> vol.Optional:
+    """Optional weather field pre-filled with a suggestion, not a default, so it can be cleared."""
+    return vol.Optional(CONF_WEATHER_ENTITY, description={"suggested_value": current or None})
 
 
 def _validate_hub(user_input: dict[str, Any]) -> dict[str, str]:
@@ -383,17 +387,19 @@ class SpotSubentryFlow(ConfigSubentryFlow):
             data: dict[str, Any] = {
                 CONF_LATITUDE: round(loc[CONF_LATITUDE], 6),
                 CONF_LONGITUDE: round(loc[CONF_LONGITUDE], 6),
-                CONF_RADIUS: user_input[CONF_RADIUS],
-                CONF_OBSERVER_HEIGHT: user_input[CONF_OBSERVER_HEIGHT],
-                CONF_GROUND_OFFSET: user_input[CONF_GROUND_OFFSET],
             }
+            # keep only real overrides, so later changes of the shared settings still apply
+            if user_input[CONF_RADIUS] != hub.radius:
+                data[CONF_RADIUS] = user_input[CONF_RADIUS]
+            if user_input[CONF_OBSERVER_HEIGHT] != hub.observer_height:
+                data[CONF_OBSERVER_HEIGHT] = user_input[CONF_OBSERVER_HEIGHT]
+            if user_input[CONF_GROUND_OFFSET]:
+                data[CONF_GROUND_OFFSET] = user_input[CONF_GROUND_OFFSET]
             if user_input.get(CONF_WEATHER_ENTITY):
                 data[CONF_WEATHER_ENTITY] = user_input[CONF_WEATHER_ENTITY]
             self._pending = {"data": data, "title": user_input[CONF_NAME].strip()}
             return await self.async_step_refetch()
-        weather = vol.Optional(CONF_WEATHER_ENTITY)
-        if current.weather_entity and subentry.data.get(CONF_WEATHER_ENTITY):
-            weather = vol.Optional(CONF_WEATHER_ENTITY, default=current.weather_entity)
+        weather = _optional_entity(subentry.data.get(CONF_WEATHER_ENTITY))
         schema = {
             **self._location_schema(current.name, current.latitude, current.longitude),
             vol.Required(CONF_RADIUS, default=current.radius): _number(
@@ -422,8 +428,8 @@ class SpotSubentryFlow(ConfigSubentryFlow):
                     data[CONF_LATITUDE],
                     data[CONF_LONGITUDE],
                     data.get(CONF_RADIUS, hub.radius),
-                    data[CONF_OBSERVER_HEIGHT],
-                    data[CONF_GROUND_OFFSET],
+                    data.get(CONF_OBSERVER_HEIGHT, hub.observer_height),
+                    data.get(CONF_GROUND_OFFSET, 0.0),
                 )
             )
         return self._progress("refetch", "save_settings")
@@ -451,6 +457,8 @@ class SpotSubentryFlow(ConfigSubentryFlow):
     async def async_step_corrections(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
+        if self._coordinator().data is None:  # corrections need the spot's buildings
+            return self.async_abort(reason="spot_not_loaded")
         return self.async_show_menu(
             step_id="corrections",
             menu_options=["add_height", "add_obstacle", "delete_corrections"],

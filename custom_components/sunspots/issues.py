@@ -1,11 +1,11 @@
-"""The single low-coverage repair issue."""
+"""Repair issues: one low-coverage summary, and one "buildings unavailable" issue per spot."""
 
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 
-from .const import DOMAIN, ISSUE_LOW_COVERAGE
+from .const import DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE, ISSUE_LOW_COVERAGE
 from .core.const import LOW_COVERAGE_THRESHOLD
 from .data import SunspotsConfigEntry
 
@@ -38,3 +38,26 @@ def async_update_coverage_issue(hass: HomeAssistant, entry: SunspotsConfigEntry)
         translation_key=ISSUE_LOW_COVERAGE,
         translation_placeholders=placeholders,
     )
+
+
+def buildings_issue_id(subentry_id: str) -> str:
+    return f"{ISSUE_BUILDINGS_UNAVAILABLE}_{subentry_id}"
+
+
+def async_create_buildings_issue(
+    hass: HomeAssistant, subentry_id: str, spot: str, error: str, severity: ir.IssueSeverity
+) -> None:
+    """Building data for one spot could not be fetched."""
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        buildings_issue_id(subentry_id),
+        is_fixable=False,
+        severity=severity,
+        translation_key=ISSUE_BUILDINGS_UNAVAILABLE,
+        translation_placeholders={"spot": spot, "error": error},
+    )
+
+
+def async_delete_buildings_issue(hass: HomeAssistant, subentry_id: str) -> None:
+    ir.async_delete_issue(hass, DOMAIN, buildings_issue_id(subentry_id))

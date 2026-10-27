@@ -8,8 +8,9 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from custom_components.sunspots.const import DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE
+from custom_components.sunspots.const import DOMAIN
 from custom_components.sunspots.coordinator import RETRY_DELAY
+from custom_components.sunspots.issues import buildings_issue_id
 
 from .conftest import make_entry
 from .test_setup import setup
@@ -87,11 +88,13 @@ async def test_failed_first_load_is_retried_and_recovers(hass, fake_fetcher, fre
 async def test_recovered_spot_clears_buildings_unavailable_issue(hass, fake_fetcher, freezer):
     freezer.move_to(NOON)
     fake_fetcher.fail_with = 503
-    await setup(hass, make_entry())
-    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE) is not None
+    entry = make_entry()
+    await setup(hass, entry)
+    issue_id = buildings_issue_id(next(iter(entry.subentries)))
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is not None
     fake_fetcher.fail_with = None
     await advance(hass, freezer, RETRY_DELAY + timedelta(seconds=1))
-    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE) is None
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
 
 
 async def test_retry_that_still_fails_stays_unavailable(hass, fake_fetcher, freezer):

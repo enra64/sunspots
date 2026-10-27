@@ -198,6 +198,7 @@
         "no_building_at_location": "Im Umkreis von 25 m um diesen Punkt wurde kein Gebäude gefunden."
       },
       "abort": {
+        "spot_not_loaded": "Die Gebäudedaten des Ortes sind noch nicht geladen. Nutze „Gebäudedaten aktualisieren“ im Menü „Neu konfigurieren“ oder versuche es später erneut.",
         "entry_not_loaded": "Sunspots läuft nicht. Prüfe die Integrationsseite und versuche es erneut.",
         "fetch_failed": "Gebäudedaten konnten nicht geladen werden: {error}",
         "already_configured": "Für diesen Standort gibt es bereits einen Ort.",
@@ -260,8 +261,8 @@
       "description": "Bei {spots} stammen weniger als {threshold} % der Skyline aus gemessenen Gebäudehöhen. Die Schattenzeiten können abweichen. Öffne beim Ort „Neu konfigurieren“ und dann „Korrekturen“, um die Höhen nahegelegener Gebäude zu setzen, oder vergleiche mit deiner Beobachtung und nutze die Aktion „Kalibrieren“."
     },
     "buildings_unavailable": {
-      "title": "Gebäudedaten konnten nicht geladen werden",
-      "description": "Sunspots konnte keine Gebäudedaten abrufen: {error}. Es arbeitet mit den gespeicherten Daten weiter. Versuche es später erneut oder erlaube Overpass in den Sunspots-Optionen als alternative Quelle (sendet Ortskoordinaten an einen öffentlichen Server)."
+      "title": "Gebäudedaten für {spot} konnten nicht geladen werden",
+      "description": "Sunspots konnte keine Gebäudedaten für {spot} abrufen: {error}. Hat der Ort bereits Gebäudedaten, arbeitet er damit weiter; sonst bleibt er nicht verfügbar und Sunspots versucht es alle 15 Minuten erneut. Du kannst auch im Menü „Neu konfigurieren“ des Ortes „Gebäudedaten aktualisieren“ wählen oder Overpass in den Sunspots-Optionen als alternative Quelle erlauben (sendet Ortskoordinaten an einen öffentlichen Server)."
     }
   },
   "exceptions": {

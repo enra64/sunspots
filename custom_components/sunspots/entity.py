@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from datetime import date, datetime
 from typing import Any
 
-from homeassistant.core import ServiceResponse
+from homeassistant.core import Context, ServiceResponse
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
@@ -72,9 +72,20 @@ def hourly_attribute(rows: Iterable[HourRow]) -> list[dict[str, Any]]:
 
 
 class SpotServicesMixin:
-    """Entity-service handlers; bound via ``async_register_platform_entity_service``."""
+    """Entity-service handlers; bound via ``async_register_platform_entity_service``.
+
+    Both binary sensors of a spot expose the actions. The ones that change data run once
+    per service call and spot, even when the call targets both sensors (device or area).
+    """
 
     coordinator: SpotCoordinator
+    _context: Context | None
+
+    async def _once[T](
+        self, action: str, args: tuple[Any, ...], job: Callable[[], Coroutine[Any, Any, T]]
+    ) -> T:
+        context_id = self._context.id if self._context else ""
+        return await self.coordinator.async_run_once((action, context_id, repr(args)), job)
 
     async def async_get_sun_forecast(self, date: date | None = None) -> ServiceResponse:
         day = date or dt_util.now().date()
@@ -117,13 +128,21 @@ class SpotServicesMixin:
         }
 
     async def async_refresh_buildings(self) -> None:
-        await self.coordinator.async_refresh_buildings()
+        await self._once("refresh_buildings", (), self.coordinator.async_refresh_buildings)
 
     async def async_set_building_height(
         self, latitude: float, longitude: float, height: float
     ) -> None:
-        await self.coordinator.async_set_building_height(latitude, longitude, height)
+        await self._once(
+            "set_building_height",
+            (latitude, longitude, height),
+            lambda: self.coordinator.async_set_building_height(latitude, longitude, height),
+        )
 
     async def async_calibrate(self, observed: str, at: datetime | None = None) -> ServiceResponse:
-        entry_id = await self.coordinator.async_calibrate(observed, at)
+        entry_id = await self._once(
+            "calibrate",
+            (observed, at),
+            lambda: self.coordinator.async_calibrate(observed, at),
+        )
         return {"result": "created" if entry_id else "consistent", "entry_id": entry_id}

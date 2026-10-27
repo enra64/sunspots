@@ -49,7 +49,9 @@ class ShadowMapImage(ImageEntity):
         )
         self._cached: bytes | None = None
         self._rendered_at: datetime | None = None
-        self._cache_key: object = None
+        # the model object itself (compared by identity: an id() could be reused after GC)
+        self._cached_model: object = None
+        self._cached_entries = -1
         self._night = False
 
     @property
@@ -65,7 +67,9 @@ class ShadowMapImage(ImageEntity):
         data = self._coordinator.data
         if self._cached is None or self._rendered_at is None or data is None:
             return False
-        if self._cache_key != (id(data.model), len(data.corrections.entries)):
+        if self._cached_model is not data.model or self._cached_entries != len(
+            data.corrections.entries
+        ):
             return False
         if self._night:
             _, elevation = self._coordinator.sun_position_now(now)
@@ -82,6 +86,7 @@ class ShadowMapImage(ImageEntity):
             self._cached = result.svg.encode()
             self._rendered_at = now
             self._night = result.sun_elevation <= 0
-            self._cache_key = (id(data.model), len(data.corrections.entries))
+            self._cached_model = data.model
+            self._cached_entries = len(data.corrections.entries)
             self._attr_image_last_updated = now
         return self._cached

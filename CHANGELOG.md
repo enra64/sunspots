@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.0 (pre-release)
+
+New: timeline options `show_today`, `show_tomorrow`, `full_day`; visual editors for `sunspots-card` and `sunspots-shadow-card`; reconfiguring a spot keeps only real overrides of the shared settings.
+
+Fixes from the pre-release review:
+
+- Actions aimed at a spot's device or area (which reaches both `_sunny` binary sensors) ran twice: `calibrate` and `set_building_height` stored duplicate corrections and `refresh_buildings` downloaded twice. They now run once per spot and call.
+- The weather entity can be removed again in the shared settings and in a spot's settings (the field was pre-filled as a default, so clearing it had no effect).
+- "Building data could not be loaded" is now one repair issue per spot (naming the spot); one spot recovering no longer hides another spot's problem, and removing a spot removes its issue.
+- *Reconfigure → Corrections* on a spot whose building data never loaded ends with a clear message instead of an error.
+- The local-midnight recompute was scheduled an hour late on the day before a daylight-saving change (the 5-minute safety recompute hid most of it).
+- A retry that finished after the integration was unloaded or reloaded started timers on the old instance.
+- A spot that recovered after a failed start now takes part in the low-coverage repair issue.
+- A failing spot logs one warning, then debug messages on the 15-minute retries.
+- Network: a server that ignores `Range` can no longer hand back bytes from the wrong offset; a malformed `Content-Length` is a provider error instead of a crash.
+- Cards: loading the bundle twice (for example also as a dashboard resource) no longer throws "already defined".
+
 ## 1.1.1 (pre-release)
 
 - Cards: the map and shadow cards no longer use a fixed grid height, so the picture is not cut off or overlapping the next card in the sections layout.
