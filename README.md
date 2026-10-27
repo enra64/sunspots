@@ -5,7 +5,7 @@ how much sun will it get today? Sunspots answers this in Home Assistant from pub
 and the position of the sun. No account, no cloud service: everything is calculated and stored
 in your own Home Assistant.
 
-> **Status: 0.3.0 pre-release.** Sun/shade geometry, the cloud-aware forecast, the shadow map and the
+> **Status: 1.0.0 candidate (pre-release).** Sun/shade geometry, the cloud-aware forecast, the shadow map and the
 > dashboard card work; accuracy has not been validated against real observations yet. Accuracy depends on how well your area is mapped,
 > see [Accuracy](#accuracy).
 
@@ -60,6 +60,20 @@ treated as unknown and the sensor then follows the geometry). The weather-aware 
 when cloud cover exceeds the limit plus 5 points and holds each state for at least 5 minutes.
 The forecast uses hourly data when your weather entity has it, otherwise daily, otherwise only the geometry. Cloud percentage is only a rough stand-in for direct sun.
 
+## How it updates
+
+Nothing is polled. The sun position and your skyline are computed locally; each spot recomputes a
+two-day timeline at local midnight, when you change something, and as a safety net every five minutes, and
+schedules its state changes for the exact moments the sun appears or disappears. The *sun remaining* and
+attributes refresh once a minute. Building data is downloaded when you add a spot or ask for a refresh and
+about every 90 days; Home Assistant starts offline from the cache. The weather forecast is read every 30
+minutes.
+
+## Examples
+
+Automations, a script reading the daily windows and dashboards: [docs/examples.md](docs/examples.md),
+[docs/dashboards](docs/dashboards/README.md).
+
 ## Fixing wrong results
 
 Open the spot → *Reconfigure*:
@@ -79,6 +93,19 @@ uncertainty: where heights are missing it falls back to floors, building type an
 default. A repair issue appears when a spot has mostly guessed heights. See
 [docs/accuracy.md](docs/accuracy.md) for limits and how to measure agreement with
 `tools/score_observations.py`. No validation numbers exist yet.
+
+## Known limitations and troubleshooting
+
+- **A spot is always shaded / sunny when it should not be**: check the pin is on the table, not on a facade
+  (the *Data quality* sensor and `docs/accuracy.md` explain what the model cannot see), then use *Corrections*.
+- **"Some spots have mostly guessed building heights" repair**: the area has few measured heights; set the
+  heights of the tallest nearby buildings under *Reconfigure → Corrections*.
+- **"Building data could not be loaded"**: Overture's tile service is experimental. Sunspots keeps the cached
+  data; retry later with `sunspots.refresh_buildings` or allow Overpass in the settings.
+- **Weather-aware sensor never turns on**: check the weather entity (and its `cloud_coverage` or condition);
+  the limit is in the settings.
+- Not modelled: trees, awnings, terrain slopes, roof shapes, clouds beyond your weather entity's value.
+- Other time zones: "today" always follows Home Assistant's time zone.
 
 ## Privacy and data
 

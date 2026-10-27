@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0 (publish as a GitHub *pre-release* until the human sign-off items in `docs/phase*-report.md` are done)
+
+- Hardening: scale test with 50 spots, hub reconfigure flow, icon translations, recovery log line,
+  `mypy --strict` clean for the whole integration, test coverage above 95 %.
+- Docs: quality-scale self-review, HACS default-repository checklist, migration notes, validation protocol,
+  automation examples, troubleshooting and limitations in the README.
+- No functional change to sun/shade results compared with 0.3.0; no migration needed.
+
 ## 0.3.0 (pre-release)
 
 - Shadow view: `image.<spot>_shadow_map` (SVG, cached 5 min, buildings-only at night) and the

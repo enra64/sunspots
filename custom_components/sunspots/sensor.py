@@ -10,7 +10,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
 )
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -241,6 +241,19 @@ class SunnyNowSensor(SensorEntity):
     async def async_added_to_hass(self) -> None:
         for coordinator in self._entry.runtime_data.spots.values():
             self.async_on_remove(coordinator.async_add_listener(self._handle_update))
+        # the spots' binary sensors may register after this entity: refresh the entity_ids list
+        self.async_on_remove(
+            self.hass.bus.async_listen(
+                er.EVENT_ENTITY_REGISTRY_UPDATED, self._handle_registry_update
+            )
+        )
+
+    @callback
+    def _handle_registry_update(self, event: Event[er.EventEntityRegistryUpdatedData]) -> None:
+        if event.data["action"] == "create" and event.data["entity_id"].startswith(
+            "binary_sensor."
+        ):
+            self.async_write_ha_state()
 
     @callback
     def _handle_update(self) -> None:

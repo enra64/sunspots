@@ -53,3 +53,17 @@ def test_translation_keys_used_in_code_exist():
         r'(?:super\(\).__init__\(coordinator, "|_attr_translation_key = ")(\w+)', code
     ):
         assert key in entity_keys, key
+
+
+def test_icons_cover_exactly_the_entities_and_services():
+    icons = json.loads((BASE / "icons.json").read_text())
+    strings = json.loads((BASE / "strings.json").read_text())
+    for platform, keys in icons["entity"].items():
+        assert set(keys) <= set(strings["entity"][platform]), platform
+    for platform, keys in strings["entity"].items():
+        assert set(keys) <= set(icons["entity"].get(platform, {})), (
+            platform
+        )  # every entity has an icon
+    assert set(icons["services"]) == set(strings["services"])
+    forecast_states = set(strings["entity"]["sensor"]["sun_forecast"]["state"])
+    assert set(icons["entity"]["sensor"]["sun_forecast"]["state"]) == forecast_states

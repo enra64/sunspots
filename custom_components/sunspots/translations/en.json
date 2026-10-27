@@ -26,6 +26,31 @@
           "weather_entity": "Optional default weather entity for cloud information.",
           "cloud_threshold_partly": "Cloud cover up to this value (and above the \"sunny\" limit) counts as partly sunny in the forecast."
         }
+      },
+      "reconfigure": {
+        "title": "Sunspots settings",
+        "data": {
+          "data_source": "Building data source",
+          "allow_overpass": "Allow Overpass (OpenStreetMap)",
+          "radius": "Search radius",
+          "observer_height": "Observer height",
+          "floor_height": "Height per floor",
+          "default_building_height": "Default building height",
+          "cloud_threshold_sunny": "Cloud limit for \"sunny\"",
+          "weather_entity": "Weather entity",
+          "cloud_threshold_partly": "Cloud limit for \"partly sunny\""
+        },
+        "data_description": {
+          "data_source": "Overture Maps is the default and only reveals map tile numbers. Overpass needs the option below.",
+          "allow_overpass": "Overpass sends the spot's coordinates to a public OpenStreetMap server. Used only as the source or as a fallback if Overture tiles fail.",
+          "radius": "How far buildings can shade a spot (100-500 m).",
+          "observer_height": "Eye level above the ground at the spot.",
+          "floor_height": "Used when only the number of floors is known.",
+          "default_building_height": "Used when a building has no height, floors or type information.",
+          "cloud_threshold_sunny": "Cloud cover up to this value still counts as sunny in the weather-aware sensor.",
+          "weather_entity": "Optional default weather entity for cloud information.",
+          "cloud_threshold_partly": "Cloud cover up to this value (and above the \"sunny\" limit) counts as partly sunny in the forecast."
+        }
       }
     },
     "error": {
@@ -33,7 +58,8 @@
       "partly_below_sunny": "The \"partly sunny\" limit must not be below the \"sunny\" limit."
     },
     "abort": {
-      "single_instance_allowed": "Sunspots is already set up. Add spots to the existing entry."
+      "single_instance_allowed": "Sunspots is already set up. Add spots to the existing entry.",
+      "reconfigure_successful": "Settings updated."
     }
   },
   "options": {
@@ -163,8 +189,7 @@
       "error": {
         "already_configured": "A spot at this location already exists.",
         "low_coverage_confirm": "Tick the box to add the spot anyway.",
-        "no_building_at_location": "No building found within 25 m of that point.",
-        "invalid_obstacle": "Directions must be 0-360° and the elevation 1-90°."
+        "no_building_at_location": "No building found within 25 m of that point."
       },
       "abort": {
         "entry_not_loaded": "Sunspots is not running. Check the integration page and try again.",

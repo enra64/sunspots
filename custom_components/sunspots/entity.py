@@ -37,7 +37,7 @@ class SunspotsEntity(CoordinatorEntity[SpotCoordinator]):
         return super().available and self.coordinator.data is not None
 
     @property
-    def attribution(self) -> str | None:  # type: ignore[override]
+    def attribution(self) -> str | None:
         data = self.coordinator.data
         return data.meta.attribution if data else None
 

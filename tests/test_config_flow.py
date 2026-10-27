@@ -304,3 +304,40 @@ async def test_reconfigure_refresh_refetches(hass, fake_fetcher):
     result = await finish_progress(hass, result)
     assert result["type"] is FlowResultType.ABORT and result["reason"] == "refresh_done"
     assert any(r[0].endswith("catalog.json") for r in fake_fetcher.requests)
+
+
+async def test_hub_reconfigure_updates_options_and_reloads(hass: HomeAssistant, fake_fetcher):
+    entry = make_entry()
+    await setup(hass, entry)
+    result = await entry.start_reconfigure_flow(hass)
+    assert result["type"] is FlowResultType.FORM and result["step_id"] == "reconfigure"
+    bad = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "data_source": "overpass",
+            "allow_overpass": False,
+            "radius": 250,
+            "observer_height": 1.2,
+            "floor_height": 3.2,
+            "default_building_height": 12,
+            "cloud_threshold_sunny": 40,
+            "cloud_threshold_partly": 75,
+        },
+    )
+    assert bad["errors"] == {"allow_overpass": "overpass_not_allowed"}
+    done = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "data_source": "overture",
+            "allow_overpass": False,
+            "radius": 200,
+            "observer_height": 1.5,
+            "floor_height": 3.2,
+            "default_building_height": 12,
+            "cloud_threshold_sunny": 40,
+            "cloud_threshold_partly": 75,
+        },
+    )
+    assert done["type"] is FlowResultType.ABORT and done["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert entry.options["radius"] == 200 and entry.runtime_data.settings.observer_height == 1.5

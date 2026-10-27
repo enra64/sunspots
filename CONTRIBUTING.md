@@ -5,7 +5,7 @@ uv venv --python 3.14 .venv
 uv pip install --python .venv/bin/python pytest-homeassistant-custom-component home-assistant-frontend==20260930.5 pmtiles==3.8.1 ruff mypy
 .venv/bin/python -m pytest          # tests
 .venv/bin/ruff check . && .venv/bin/ruff format --check .
-.venv/bin/mypy                      # strict, on custom_components/sunspots/core
+.venv/bin/mypy                      # strict, whole integration
 ```
 
 Rules of the road (see `docs/decisions.md` for the reasons):

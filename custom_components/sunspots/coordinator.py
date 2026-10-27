@@ -649,6 +649,8 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
     async def _async_retry(self, _now: datetime) -> None:
         self._unsub_retry = None
         if await self.async_initialize():
+            _LOGGER.info("Spot %s recovered and is available again", self.settings.name)
+            ir.async_delete_issue(self.hass, DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE)
             await self.async_refresh()
 
     async def async_shutdown(self) -> None:

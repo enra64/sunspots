@@ -57,7 +57,7 @@ class ShadowMapImage(ImageEntity):
         return self._coordinator.data is not None
 
     @property
-    def attribution(self) -> str | None:  # type: ignore[override]
+    def attribution(self) -> str | None:
         data = self._coordinator.data
         return data.meta.attribution if data else None
 

@@ -73,3 +73,16 @@ async def test_morning_notification_message_renders(hass, fake_fetcher, freezer)
     assert automation["triggers"][0]["at"] == "08:30:00" and "conditions" not in automation
     message = Template(automation["actions"][0]["data"]["message"], hass).async_render()
     assert message.startswith("Next sun: Schneiderei from ")
+
+
+EXAMPLES = Path(__file__).parents[1] / "docs" / "examples.md"
+
+
+def test_example_automations_are_valid_yaml():
+    import re
+
+    blocks = re.findall(r"```yaml\n(.*?)```", EXAMPLES.read_text(), re.S)
+    assert len(blocks) == 3
+    for block in blocks:
+        parsed = yaml.safe_load(block)
+        assert parsed["alias"] and ("actions" in parsed or "sequence" in parsed)

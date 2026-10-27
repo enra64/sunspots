@@ -26,6 +26,31 @@
           "weather_entity": "Optionale Standard-Wetter-Entität für Wolkeninformationen.",
           "cloud_threshold_partly": "Bewölkung bis zu diesem Wert (und über der „sonnig“-Grenze) gilt in der Vorhersage als teils sonnig."
         }
+      },
+      "reconfigure": {
+        "title": "Sunspots-Einstellungen",
+        "data": {
+          "data_source": "Quelle der Gebäudedaten",
+          "allow_overpass": "Overpass (OpenStreetMap) erlauben",
+          "radius": "Suchradius",
+          "observer_height": "Beobachterhöhe",
+          "floor_height": "Höhe pro Stockwerk",
+          "default_building_height": "Standard-Gebäudehöhe",
+          "cloud_threshold_sunny": "Wolkengrenze für „sonnig“",
+          "weather_entity": "Wetter-Entität",
+          "cloud_threshold_partly": "Wolkengrenze für „teils sonnig“"
+        },
+        "data_description": {
+          "data_source": "Overture Maps ist die Voreinstellung und verrät nur Kachelnummern. Overpass braucht die Option darunter.",
+          "allow_overpass": "Overpass sendet die Koordinaten des Ortes an einen öffentlichen OpenStreetMap-Server. Wird nur als Quelle oder als Ausweichlösung genutzt, wenn die Overture-Kacheln ausfallen.",
+          "radius": "Wie weit Gebäude einen Ort verschatten können (100-500 m).",
+          "observer_height": "Augenhöhe über dem Boden am Ort.",
+          "floor_height": "Wird genutzt, wenn nur die Stockwerkszahl bekannt ist.",
+          "default_building_height": "Wird genutzt, wenn ein Gebäude weder Höhe, Stockwerke noch Typ hat.",
+          "cloud_threshold_sunny": "Bewölkung bis zu diesem Wert gilt im wetterabhängigen Sensor noch als sonnig.",
+          "weather_entity": "Optionale Standard-Wetter-Entität für Wolkeninformationen.",
+          "cloud_threshold_partly": "Bewölkung bis zu diesem Wert (und über der „sonnig“-Grenze) gilt in der Vorhersage als teils sonnig."
+        }
       }
     },
     "error": {
@@ -33,7 +58,8 @@
       "partly_below_sunny": "Die Grenze für „teils sonnig“ darf nicht unter der „sonnig“-Grenze liegen."
     },
     "abort": {
-      "single_instance_allowed": "Sunspots ist bereits eingerichtet. Füge Orte zum bestehenden Eintrag hinzu."
+      "single_instance_allowed": "Sunspots ist bereits eingerichtet. Füge Orte zum bestehenden Eintrag hinzu.",
+      "reconfigure_successful": "Einstellungen aktualisiert."
     }
   },
   "options": {
@@ -163,8 +189,7 @@
       "error": {
         "already_configured": "Für diesen Standort gibt es bereits einen Ort.",
         "low_coverage_confirm": "Setze den Haken, um den Ort trotzdem hinzuzufügen.",
-        "no_building_at_location": "Im Umkreis von 25 m um diesen Punkt wurde kein Gebäude gefunden.",
-        "invalid_obstacle": "Richtungen müssen 0-360° und der Höhenwinkel 1-90° betragen."
+        "no_building_at_location": "Im Umkreis von 25 m um diesen Punkt wurde kein Gebäude gefunden."
       },
       "abort": {
         "entry_not_loaded": "Sunspots läuft nicht. Prüfe die Integrationsseite und versuche es erneut.",

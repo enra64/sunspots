@@ -70,15 +70,10 @@ CONF_DELETE = "delete"
 
 
 def _number(minimum: float, maximum: float, step: float, unit: str | None = None) -> NumberSelector:
-    return NumberSelector(
-        NumberSelectorConfig(
-            min=minimum,
-            max=maximum,
-            step=step,
-            mode=NumberSelectorMode.BOX,
-            unit_of_measurement=unit,
-        )
-    )
+    config = NumberSelectorConfig(min=minimum, max=maximum, step=step, mode=NumberSelectorMode.BOX)
+    if unit is not None:
+        config["unit_of_measurement"] = unit
+    return NumberSelector(config)
 
 
 def _hub_schema(defaults: dict[str, Any]) -> vol.Schema:
@@ -152,6 +147,24 @@ class SunspotsConfigFlow(ConfigFlow, domain=DOMAIN):
                 _hub_schema(dict(HUB_DEFAULTS)), user_input
             ),
             errors=errors,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Same form as the options flow, reachable from the entry's menu."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            errors = _validate_hub(user_input)
+            if not errors:
+                self.hass.config_entries.async_update_entry(
+                    entry, options=_normalise_hub(user_input)
+                )
+                return self.async_abort(reason="reconfigure_successful")
+        current = {**HUB_DEFAULTS, **entry.options}
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=_hub_schema(current), errors=errors
         )
 
     @staticmethod
@@ -234,7 +247,7 @@ class SpotSubentryFlow(ConfigSubentryFlow):
 
         return await hass.async_add_executor_job(work)
 
-    def _progress(self, step_id: str, next_step: str) -> Any:
+    def _progress(self, step_id: str, next_step: str) -> SubentryFlowResult:
         """Shared progress handling for tasks that fetch data."""
         assert self._task is not None
         if not self._task.done():
@@ -477,17 +490,14 @@ class SpotSubentryFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            try:
-                await self._coordinator().async_add_obstacle(
-                    user_input[CONF_AZ_FROM],
-                    user_input[CONF_AZ_TO],
-                    user_input[CONF_ELEVATION],
-                    user_input.get(CONF_NOTE),
-                )
-            except ServiceValidationError:
-                errors["base"] = "invalid_obstacle"
-            else:
-                return self.async_abort(reason="correction_added")
+            # the selectors already enforce 0-360 degrees and 1-90 degrees elevation
+            await self._coordinator().async_add_obstacle(
+                user_input[CONF_AZ_FROM],
+                user_input[CONF_AZ_TO],
+                user_input[CONF_ELEVATION],
+                user_input.get(CONF_NOTE),
+            )
+            return self.async_abort(reason="correction_added")
         schema = vol.Schema(
             {
                 vol.Required(CONF_AZ_FROM, default=90): _number(0, 360, 1, "°"),
