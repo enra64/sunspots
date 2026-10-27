@@ -1,0 +1,275 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sunspots",
+        "description": "Shared settings for all spots. Building data comes from Overture Maps (public tiles). Your location is never sent anywhere unless you allow Overpass.",
+        "data": {
+          "data_source": "Building data source",
+          "allow_overpass": "Allow Overpass (OpenStreetMap)",
+          "radius": "Search radius",
+          "observer_height": "Observer height",
+          "floor_height": "Height per floor",
+          "default_building_height": "Default building height",
+          "cloud_threshold_sunny": "Cloud limit for \"sunny\"",
+          "weather_entity": "Weather entity"
+        },
+        "data_description": {
+          "data_source": "Overture Maps is the default and only reveals map tile numbers. Overpass needs the option below.",
+          "allow_overpass": "Overpass sends the spot's coordinates to a public OpenStreetMap server. Used only as the source or as a fallback if Overture tiles fail.",
+          "radius": "How far buildings can shade a spot (100-500 m).",
+          "observer_height": "Eye level above the ground at the spot.",
+          "floor_height": "Used when only the number of floors is known.",
+          "default_building_height": "Used when a building has no height, floors or type information.",
+          "cloud_threshold_sunny": "Cloud cover up to this value still counts as sunny in the weather-aware sensor.",
+          "weather_entity": "Optional default weather entity for cloud information."
+        }
+      }
+    },
+    "error": {
+      "overpass_not_allowed": "Choose Overpass as the source only if you also allow Overpass."
+    },
+    "abort": {
+      "single_instance_allowed": "Sunspots is already set up. Add spots to the existing entry."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sunspots settings",
+        "data": {
+          "data_source": "Building data source",
+          "allow_overpass": "Allow Overpass (OpenStreetMap)",
+          "radius": "Search radius",
+          "observer_height": "Observer height",
+          "floor_height": "Height per floor",
+          "default_building_height": "Default building height",
+          "cloud_threshold_sunny": "Cloud limit for \"sunny\"",
+          "weather_entity": "Weather entity"
+        },
+        "data_description": {
+          "allow_overpass": "Overpass sends the spot's coordinates to a public OpenStreetMap server."
+        }
+      }
+    },
+    "error": {
+      "overpass_not_allowed": "Choose Overpass as the source only if you also allow Overpass."
+    }
+  },
+  "selector": {
+    "data_source": {
+      "options": {
+        "overture": "Overture Maps (recommended)",
+        "overpass": "Overpass (OpenStreetMap)"
+      }
+    },
+    "observed": {
+      "options": {
+        "sunny": "In the sun",
+        "shaded": "In the shade"
+      }
+    }
+  },
+  "config_subentries": {
+    "spot": {
+      "initiate_flow": {
+        "user": "Add spot"
+      },
+      "entry_type": "Spot",
+      "step": {
+        "user": {
+          "title": "New spot",
+          "description": "Name the place and pick its exact location (for example the terrace table).",
+          "data": {
+            "name": "Name",
+            "location": "Location"
+          }
+        },
+        "summary": {
+          "title": "Buildings loaded",
+          "description": "Found {buildings} buildings around the spot (source: {provider}). Share of the skyline with measured heights: {coverage}."
+        },
+        "summary_low": {
+          "title": "Few measured building heights",
+          "description": "Found {buildings} buildings (source: {provider}), but only {coverage} of the skyline has measured heights (below {threshold}%). Shade results will be rough here. You can fix heights later under Reconfigure.",
+          "data": {
+            "continue_low_coverage": "Add the spot anyway"
+          }
+        },
+        "reconfigure": {
+          "title": "Reconfigure spot",
+          "menu_options": {
+            "settings": "Settings",
+            "corrections": "Corrections",
+            "refresh": "Refresh building data"
+          }
+        },
+        "settings": {
+          "title": "Spot settings",
+          "data": {
+            "name": "Name",
+            "location": "Location",
+            "radius": "Search radius",
+            "observer_height": "Observer height",
+            "ground_offset": "Ground offset",
+            "weather_entity": "Weather entity"
+          },
+          "data_description": {
+            "ground_offset": "Height of the spot above (positive) or below the surrounding ground, for terraces and slopes.",
+            "weather_entity": "Overrides the shared weather entity."
+          }
+        },
+        "corrections": {
+          "title": "Corrections",
+          "menu_options": {
+            "add_height": "Set a building height",
+            "add_obstacle": "Add an obstacle (tree, mast)",
+            "delete_corrections": "Delete corrections"
+          }
+        },
+        "add_height": {
+          "title": "Set a building height",
+          "description": "Pick any point on the building and enter its real height.",
+          "data": {
+            "location": "Point on the building",
+            "height": "Height"
+          }
+        },
+        "add_obstacle": {
+          "title": "Add an obstacle",
+          "description": "Something that blocks the sun between two compass directions (0 = north, 90 = east).",
+          "data": {
+            "azimuth_from": "From direction",
+            "azimuth_to": "To direction",
+            "elevation": "Blocks up to elevation",
+            "note": "Note"
+          }
+        },
+        "delete_corrections": {
+          "title": "Delete corrections",
+          "data": {
+            "delete": "Corrections to delete"
+          }
+        }
+      },
+      "progress": {
+        "fetch_buildings": "Loading building data. This can take a few seconds."
+      },
+      "error": {
+        "already_configured": "A spot at this location already exists.",
+        "low_coverage_confirm": "Tick the box to add the spot anyway.",
+        "no_building_at_location": "No building found within 25 m of that point.",
+        "invalid_obstacle": "Directions must be 0-360° and the elevation 1-90°."
+      },
+      "abort": {
+        "entry_not_loaded": "Sunspots is not running. Check the integration page and try again.",
+        "fetch_failed": "Building data could not be loaded: {error}",
+        "already_configured": "A spot at this location already exists.",
+        "reconfigure_successful": "Spot updated.",
+        "correction_added": "Correction saved. The sun times were recalculated.",
+        "correction_deleted": "Corrections deleted. The sun times were recalculated.",
+        "no_corrections": "There are no corrections to delete.",
+        "refresh_done": "Building data refreshed."
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "sunny": {
+        "name": "Sunny"
+      },
+      "sunny_weather_aware": {
+        "name": "Sunny (weather-aware)"
+      }
+    },
+    "sensor": {
+      "next_change": {
+        "name": "Next change"
+      },
+      "sun_remaining": {
+        "name": "Sun remaining"
+      },
+      "sun_hours_today": {
+        "name": "Sun hours today"
+      },
+      "data_quality": {
+        "name": "Data quality"
+      },
+      "sunny_now": {
+        "name": "Sunny spots"
+      }
+    }
+  },
+  "issues": {
+    "low_coverage": {
+      "title": "Some spots have mostly guessed building heights",
+      "description": "For {spots}, less than {threshold}% of the skyline comes from measured building heights. Shade times may be off. Open the spot's Reconfigure menu, then Corrections, to set the heights of nearby buildings, or compare with what you see and use the calibrate action."
+    },
+    "buildings_unavailable": {
+      "title": "Building data could not be loaded",
+      "description": "Sunspots could not fetch building data: {error}. It keeps working from cached data. Try again later, or allow Overpass in the Sunspots options as an alternative source (it sends spot coordinates to a public server)."
+    }
+  },
+  "exceptions": {
+    "no_building_at_location": {
+      "message": "No building found within 25 m of that point."
+    },
+    "invalid_obstacle": {
+      "message": "Invalid obstacle: {error}"
+    },
+    "sun_below_horizon": {
+      "message": "The sun is below the horizon at that time, so there is nothing to calibrate."
+    },
+    "refresh_failed": {
+      "message": "Building data could not be refreshed: {error}"
+    }
+  },
+  "services": {
+    "get_sun_forecast": {
+      "name": "Get sun forecast",
+      "description": "Returns the sunlit intervals for a day.",
+      "fields": {
+        "date": {
+          "name": "Date",
+          "description": "Local date; defaults to today."
+        }
+      }
+    },
+    "refresh_buildings": {
+      "name": "Refresh buildings",
+      "description": "Downloads fresh building data for the spot."
+    },
+    "set_building_height": {
+      "name": "Set building height",
+      "description": "Overrides the height of the building at a point.",
+      "fields": {
+        "latitude": {
+          "name": "Latitude",
+          "description": "A point on the building."
+        },
+        "longitude": {
+          "name": "Longitude",
+          "description": "A point on the building."
+        },
+        "height": {
+          "name": "Height",
+          "description": "Real height in metres."
+        }
+      }
+    },
+    "calibrate": {
+      "name": "Calibrate",
+      "description": "Tells Sunspots what you see right now, or saw at a given time, and adds a correction if the model disagrees.",
+      "fields": {
+        "observed": {
+          "name": "Observed",
+          "description": "Was the spot in the sun or in the shade?"
+        },
+        "at": {
+          "name": "Time",
+          "description": "When you observed it; defaults to now."
+        }
+      }
+    }
+  }
+}

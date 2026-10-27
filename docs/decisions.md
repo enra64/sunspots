@@ -1,0 +1,22 @@
+# Decision log
+
+| # | Decision | Alternatives | Evidence / reason |
+|---|---|---|---|
+| D1 | Project `sunspots`, repo https://github.com/enra64/sunspots | – | User, §13 Q1 |
+| D2 | Code licence **Apache-2.0** with a `NOTICE` file naming the author | MIT | User asked for the licence that obliges others to credit them as original author. MIT only requires keeping the copyright line; Apache-2.0 additionally requires redistributors to keep the NOTICE attribution and to mark changes. **Confirm** this reading. Fixtures under `tests/fixtures/` are ODbL, separate `LICENSE`. |
+| D3 | Test spot for validation: Cafe Schneiderei, Berlin (52.5520183, 13.4191958) | – | User, Q4 |
+| D4 | Weather integration for forecast checks: **unknown** | – | No Home Assistant MCP server is connected in this session, so it could not be looked up. Open question for the user. |
+| D5 | No Pi/HA-OS access for the agent; Pi tests are human tasks | – | User, Q3 (HA runs in Docker, no access given) |
+| D6 | PMTiles access: **async aiohttp (HA's shared session) + `pmtiles.tile` primitives** (header, directory, `find_tile`), not `pmtiles.reader.Reader` | executor + sync urllib/requests | Reader re-fetches the 127-byte header on every `get()` (extra request per tile). Primitives are pure parsing and cheap, so no thread is needed; only MVT decode (0.04-0.27 s on a laptop) goes to an executor. Not yet measured on a Pi. |
+| D7 | Subentries design B stays the default | Fallback A | Source review only (see report); not yet runtime-tested. |
+| D8 | `LOW_COVERAGE_THRESHOLD = 0.30` kept | – | Median over 6 test locations 0.973; but one small town scored 0.0, so the threshold is meaningful. Revisit after Pi/ShadeMap data. |
+| D9 | Phase 0 accepted by user (licence OK; Pi not available, user is confident the x86 server copes, so the Pi bench is waived and replaced by a human bench run on their server) | – | User message after the Phase 0 report |
+| D10 | User weather entity: `weather.home` = **Met.no**. Daily forecast carries `condition`, temperature, precipitation, wind, humidity, `wind_bearing`, `uv_index` but **no `cloud_coverage`**; so for this user clouds come from the `condition` table. Condition table must also map `clear-night` (0), `windy`, `windy-variant`, `exceptional` (unknown). | – | User-supplied `weather.get_forecasts` (daily) output. Hourly output not yet seen; Phase 2 must handle both and verify hourly with the user. |
+| D11 | Chunk cache keyed by **tile (z14, x, y) only**, release stored inside the chunk | Spec: keyed by release + tile | Lets a second spot at a covered location be built from the cache without resolving STAC (no network). Refresh overwrites the tile with the newest release. |
+| D12 | Use `probatio` (not `voluptuous`) for flow/service schemas | voluptuous | HA 2026.10 core uses `probatio` throughout and lists it as a dependency; `voluptuous` is still installed but legacy. |
+| D13 | Weather gate: turns **clear** at cloud <= limit, turns **cloudy** at cloud > limit + 5 points, 5-min minimum dwell; unknown cloud keeps the current state (geometry only when never known) | symmetric +-5 around the limit | Symmetric bands would make the Met.no `partlycloudy` value (40) behave differently depending on the previous state. |
+| D14 | Spot reconfigure that changes location/radius fetches tiles first (progress step); reload and startup use the cache only. If the cache and store are both gone at startup the spot fetches once (documented exception) | Fail the spot | A lost `.storage` tile file should self-heal rather than leave the spot dead; the fetch is serialized and rate-limited. |
+| D15 | `sun_remaining` and the entity states are refreshed by a 1-minute tick (cheap, no recompute); the timeline is recomputed at boundaries, local midnight, and every 5 minutes as a safety net | 5-minute refresh only | Minute-accurate "remaining" values. Recorder cost: one state row per minute while a spot is sunny. |
+| D16 | Sun-disc margin of 0.27 degrees is applied in the integration (sunny iff elevation > skyline + 0.27) | margin off | Conservative: the whole sun disc must clear the skyline. |
+| D17 | No `repairs.py`; issues are created with translation keys (no fix flows needed) | repairs.py with RepairsFlow | All issues are non-fixable. |
+| D18 | `brand/` folder lives in `custom_components/sunspots/brand/` | repo root `brand/` | HA 2026.3+ serves integration-local brand images from that folder (checked in HA developer docs). |

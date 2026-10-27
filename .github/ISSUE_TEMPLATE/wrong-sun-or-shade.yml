@@ -1,0 +1,20 @@
+name: Wrong sun/shade result
+description: The spot showed the wrong state compared with what you saw.
+body:
+  - type: textarea
+    attributes:
+      label: What did you see, and when?
+      description: Date, local time, spot, sunny or shaded in reality, and what Sunspots said.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Comparison output
+      description: Output of `tools/score_observations.py` (or a ShadeMap screenshot) if you have it.
+  - type: textarea
+    attributes:
+      label: Diagnostics
+      description: Attach the downloaded diagnostics file (contains no coordinates). Mention the country or region.
+  - type: input
+    attributes:
+      label: Data quality sensor value

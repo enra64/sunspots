@@ -1,0 +1,269 @@
+{
+ "release": "2026-10-21.0",
+ "url": "https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-10-21.0/buildings.pmtiles",
+ "header": {
+  "root_length": 14124,
+  "leaf_directory_length": 34052574,
+  "tile_entries_count": 16068537,
+  "internal_compression": "GZIP",
+  "tile_compression": "GZIP",
+  "tile_type": "MVT",
+  "min_zoom": 0,
+  "max_zoom": 14
+ },
+ "locations": [
+  {
+   "name": "Berlin (Cafe Schneiderei)",
+   "lat": 52.5520183,
+   "lon": 13.4191958,
+   "tiles": 1,
+   "requests": 3,
+   "bytes": 165710,
+   "fetch_seconds_excl_sleep": 2.36,
+   "median_request_latency_s": 0.624,
+   "tile_bytes_decompressed": [
+    554939
+   ],
+   "decode_seconds": 0.047,
+   "building_features": 1571,
+   "part_features": 35,
+   "attr_availability_pct": {
+    "height": 19.5,
+    "num_floors": 68.0,
+    "min_height": 0.0,
+    "class": 89.1,
+    "subtype": 89.4,
+    "has_parts": 100.0,
+    "is_underground": 100.0,
+    "id": 100.0,
+    "names": 3.1
+   },
+   "ring_orientation_exterior_positive_pct": 100.0,
+   "horizon_seconds_pure_python": 0.005,
+   "edges": 1833,
+   "buildings_in_radius": 150,
+   "height_source_pct": {
+    "default": 8.2,
+    "floors": 57.2,
+    "height": 19.2,
+    "class": 15.3
+   },
+   "parts_with_min_height_gt0": 0,
+   "spot_inside_building": false,
+   "max_horizon_deg": 84.7,
+   "coverage_metric": 1.0
+  },
+  {
+   "name": "Berlin Mitte",
+   "lat": 52.52,
+   "lon": 13.405,
+   "tiles": 2,
+   "requests": 2,
+   "bytes": 263381,
+   "fetch_seconds_excl_sleep": 2.04,
+   "median_request_latency_s": 1.016,
+   "tile_bytes_decompressed": [
+    494285,
+    432295
+   ],
+   "decode_seconds": 0.101,
+   "building_features": 1804,
+   "part_features": 827,
+   "attr_availability_pct": {
+    "height": 15.9,
+    "num_floors": 62.9,
+    "min_height": 0.0,
+    "class": 72.8,
+    "subtype": 73.9,
+    "has_parts": 100.0,
+    "is_underground": 100.0,
+    "id": 100.0,
+    "names": 16.9
+   },
+   "ring_orientation_exterior_positive_pct": 100.0,
+   "horizon_seconds_pure_python": 0.002,
+   "edges": 798,
+   "buildings_in_radius": 92,
+   "height_source_pct": {
+    "default": 18.4,
+    "height": 19.7,
+    "floors": 55.7,
+    "class": 6.2
+   },
+   "parts_with_min_height_gt0": 55,
+   "spot_inside_building": false,
+   "max_horizon_deg": 44.4,
+   "coverage_metric": 0.922
+  },
+  {
+   "name": "Munich Marienplatz",
+   "lat": 48.1374,
+   "lon": 11.5755,
+   "tiles": 2,
+   "requests": 3,
+   "bytes": 537552,
+   "fetch_seconds_excl_sleep": 3.15,
+   "median_request_latency_s": 1.224,
+   "tile_bytes_decompressed": [
+    998664,
+    1065831
+   ],
+   "decode_seconds": 0.153,
+   "building_features": 5813,
+   "part_features": 629,
+   "attr_availability_pct": {
+    "height": 7.6,
+    "num_floors": 49.8,
+    "min_height": 0.0,
+    "class": 59.8,
+    "subtype": 60.5,
+    "has_parts": 100.0,
+    "is_underground": 100.0,
+    "id": 100.0,
+    "names": 5.8
+   },
+   "ring_orientation_exterior_positive_pct": 100.0,
+   "horizon_seconds_pure_python": 0.007,
+   "edges": 2612,
+   "buildings_in_radius": 428,
+   "height_source_pct": {
+    "floors": 44.6,
+    "default": 30.8,
+    "height": 12.3,
+    "class": 12.3
+   },
+   "parts_with_min_height_gt0": 146,
+   "spot_inside_building": false,
+   "max_horizon_deg": 84.4,
+   "coverage_metric": 1.0
+  },
+  {
+   "name": "Paris Marais",
+   "lat": 48.8566,
+   "lon": 2.3522,
+   "tiles": 2,
+   "requests": 3,
+   "bytes": 861695,
+   "fetch_seconds_excl_sleep": 3.35,
+   "median_request_latency_s": 1.323,
+   "tile_bytes_decompressed": [
+    1637068,
+    1547706
+   ],
+   "decode_seconds": 0.265,
+   "building_features": 8581,
+   "part_features": 1364,
+   "attr_availability_pct": {
+    "height": 2.9,
+    "num_floors": 65.4,
+    "min_height": 0.0,
+    "class": 65.7,
+    "subtype": 66.4,
+    "has_parts": 100.0,
+    "is_underground": 100.0,
+    "id": 100.0,
+    "names": 4.9
+   },
+   "ring_orientation_exterior_positive_pct": 100.0,
+   "horizon_seconds_pure_python": 0.004,
+   "edges": 2321,
+   "buildings_in_radius": 212,
+   "height_source_pct": {
+    "default": 16.9,
+    "floors": 58.7,
+    "class": 13.1,
+    "height": 11.3
+   },
+   "parts_with_min_height_gt0": 166,
+   "spot_inside_building": true,
+   "max_horizon_deg": 17.5,
+   "coverage_metric": 0.946
+  },
+  {
+   "name": "Portland OR (US mid-size)",
+   "lat": 45.5152,
+   "lon": -122.6784,
+   "tiles": 1,
+   "requests": 2,
+   "bytes": 177471,
+   "fetch_seconds_excl_sleep": 1.73,
+   "median_request_latency_s": 0.852,
+   "tile_bytes_decompressed": [
+    685561
+   ],
+   "decode_seconds": 0.042,
+   "building_features": 1337,
+   "part_features": 354,
+   "attr_availability_pct": {
+    "height": 81.7,
+    "num_floors": 83.0,
+    "min_height": 0.1,
+    "class": 58.6,
+    "subtype": 61.9,
+    "has_parts": 100.0,
+    "is_underground": 100.0,
+    "id": 100.0,
+    "names": 31.3
+   },
+   "ring_orientation_exterior_positive_pct": 100.0,
+   "horizon_seconds_pure_python": 0.003,
+   "edges": 870,
+   "buildings_in_radius": 110,
+   "height_source_pct": {
+    "height": 70.1,
+    "floors": 24.6,
+    "class": 2.1,
+    "default": 3.1
+   },
+   "parts_with_min_height_gt0": 31,
+   "spot_inside_building": false,
+   "max_horizon_deg": 77.9,
+   "coverage_metric": 1.0
+  },
+  {
+   "name": "Small town: Quedlinburg",
+   "lat": 51.7886,
+   "lon": 11.1437,
+   "tiles": 2,
+   "requests": 3,
+   "bytes": 517381,
+   "fetch_seconds_excl_sleep": 3.23,
+   "median_request_latency_s": 1.286,
+   "tile_bytes_decompressed": [
+    932493,
+    1356100
+   ],
+   "decode_seconds": 0.13,
+   "building_features": 7042,
+   "part_features": 54,
+   "attr_availability_pct": {
+    "height": 14.5,
+    "num_floors": 4.1,
+    "min_height": 0.0,
+    "class": 23.3,
+    "subtype": 23.9,
+    "has_parts": 100.0,
+    "is_underground": 100.0,
+    "id": 100.0,
+    "names": 2.6
+   },
+   "ring_orientation_exterior_positive_pct": 100.0,
+   "horizon_seconds_pure_python": 0.01,
+   "edges": 4225,
+   "buildings_in_radius": 718,
+   "height_source_pct": {
+    "default": 64.0,
+    "class": 17.7,
+    "height": 15.0,
+    "floors": 3.3
+   },
+   "parts_with_min_height_gt0": 6,
+   "spot_inside_building": false,
+   "max_horizon_deg": 69.3,
+   "coverage_metric": 0.0
+  }
+ ],
+ "median_coverage_metric": 0.973,
+ "total_requests": 18,
+ "total_bytes": 2529969
+}

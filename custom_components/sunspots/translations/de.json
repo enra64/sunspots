@@ -1,0 +1,275 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sunspots",
+        "description": "Gemeinsame Einstellungen für alle Orte. Die Gebäudedaten kommen von Overture Maps (öffentliche Kacheln). Dein Standort wird nur gesendet, wenn du Overpass erlaubst.",
+        "data": {
+          "data_source": "Quelle der Gebäudedaten",
+          "allow_overpass": "Overpass (OpenStreetMap) erlauben",
+          "radius": "Suchradius",
+          "observer_height": "Beobachterhöhe",
+          "floor_height": "Höhe pro Stockwerk",
+          "default_building_height": "Standard-Gebäudehöhe",
+          "cloud_threshold_sunny": "Wolkengrenze für „sonnig“",
+          "weather_entity": "Wetter-Entität"
+        },
+        "data_description": {
+          "data_source": "Overture Maps ist die Voreinstellung und verrät nur Kachelnummern. Overpass braucht die Option darunter.",
+          "allow_overpass": "Overpass sendet die Koordinaten des Ortes an einen öffentlichen OpenStreetMap-Server. Wird nur als Quelle oder als Ausweichlösung genutzt, wenn die Overture-Kacheln ausfallen.",
+          "radius": "Wie weit Gebäude einen Ort verschatten können (100-500 m).",
+          "observer_height": "Augenhöhe über dem Boden am Ort.",
+          "floor_height": "Wird genutzt, wenn nur die Stockwerkszahl bekannt ist.",
+          "default_building_height": "Wird genutzt, wenn ein Gebäude weder Höhe, Stockwerke noch Typ hat.",
+          "cloud_threshold_sunny": "Bewölkung bis zu diesem Wert gilt im wetterabhängigen Sensor noch als sonnig.",
+          "weather_entity": "Optionale Standard-Wetter-Entität für Wolkeninformationen."
+        }
+      }
+    },
+    "error": {
+      "overpass_not_allowed": "Overpass als Quelle ist nur möglich, wenn du Overpass auch erlaubst."
+    },
+    "abort": {
+      "single_instance_allowed": "Sunspots ist bereits eingerichtet. Füge Orte zum bestehenden Eintrag hinzu."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sunspots-Einstellungen",
+        "data": {
+          "data_source": "Quelle der Gebäudedaten",
+          "allow_overpass": "Overpass (OpenStreetMap) erlauben",
+          "radius": "Suchradius",
+          "observer_height": "Beobachterhöhe",
+          "floor_height": "Höhe pro Stockwerk",
+          "default_building_height": "Standard-Gebäudehöhe",
+          "cloud_threshold_sunny": "Wolkengrenze für „sonnig“",
+          "weather_entity": "Wetter-Entität"
+        },
+        "data_description": {
+          "allow_overpass": "Overpass sendet die Koordinaten des Ortes an einen öffentlichen OpenStreetMap-Server."
+        }
+      }
+    },
+    "error": {
+      "overpass_not_allowed": "Overpass als Quelle ist nur möglich, wenn du Overpass auch erlaubst."
+    }
+  },
+  "selector": {
+    "data_source": {
+      "options": {
+        "overture": "Overture Maps (empfohlen)",
+        "overpass": "Overpass (OpenStreetMap)"
+      }
+    },
+    "observed": {
+      "options": {
+        "sunny": "In der Sonne",
+        "shaded": "Im Schatten"
+      }
+    }
+  },
+  "config_subentries": {
+    "spot": {
+      "initiate_flow": {
+        "user": "Ort hinzufügen"
+      },
+      "entry_type": "Ort",
+      "step": {
+        "user": {
+          "title": "Neuer Ort",
+          "description": "Gib dem Ort einen Namen und wähle die genaue Position (zum Beispiel den Terrassentisch).",
+          "data": {
+            "name": "Name",
+            "location": "Standort"
+          }
+        },
+        "summary": {
+          "title": "Gebäude geladen",
+          "description": "{buildings} Gebäude rund um den Ort gefunden (Quelle: {provider}). Anteil der Skyline mit gemessenen Höhen: {coverage}."
+        },
+        "summary_low": {
+          "title": "Wenige gemessene Gebäudehöhen",
+          "description": "{buildings} Gebäude gefunden (Quelle: {provider}), aber nur {coverage} der Skyline hat gemessene Höhen (unter {threshold} %). Die Schattenzeiten sind hier ungenau. Höhen kannst du später unter „Neu konfigurieren“ korrigieren.",
+          "data": {
+            "continue_low_coverage": "Ort trotzdem hinzufügen"
+          }
+        },
+        "reconfigure": {
+          "title": "Ort neu konfigurieren",
+          "menu_options": {
+            "settings": "Einstellungen",
+            "corrections": "Korrekturen",
+            "refresh": "Gebäudedaten aktualisieren"
+          }
+        },
+        "settings": {
+          "title": "Ortseinstellungen",
+          "data": {
+            "name": "Name",
+            "location": "Standort",
+            "radius": "Suchradius",
+            "observer_height": "Beobachterhöhe",
+            "ground_offset": "Bodenversatz",
+            "weather_entity": "Wetter-Entität"
+          },
+          "data_description": {
+            "ground_offset": "Höhe des Ortes über (positiv) oder unter dem umliegenden Boden, für Terrassen und Hänge.",
+            "weather_entity": "Überschreibt die gemeinsame Wetter-Entität."
+          }
+        },
+        "corrections": {
+          "title": "Korrekturen",
+          "menu_options": {
+            "add_height": "Gebäudehöhe festlegen",
+            "add_obstacle": "Hindernis hinzufügen (Baum, Mast)",
+            "delete_corrections": "Korrekturen löschen"
+          }
+        },
+        "add_height": {
+          "title": "Gebäudehöhe festlegen",
+          "description": "Wähle einen beliebigen Punkt auf dem Gebäude und gib die tatsächliche Höhe an.",
+          "data": {
+            "location": "Punkt auf dem Gebäude",
+            "height": "Höhe"
+          }
+        },
+        "add_obstacle": {
+          "title": "Hindernis hinzufügen",
+          "description": "Etwas, das die Sonne zwischen zwei Himmelsrichtungen verdeckt (0 = Norden, 90 = Osten).",
+          "data": {
+            "azimuth_from": "Von Richtung",
+            "azimuth_to": "Bis Richtung",
+            "elevation": "Verdeckt bis Höhenwinkel",
+            "note": "Notiz"
+          }
+        },
+        "delete_corrections": {
+          "title": "Korrekturen löschen",
+          "data": {
+            "delete": "Zu löschende Korrekturen"
+          }
+        }
+      },
+      "progress": {
+        "fetch_buildings": "Gebäudedaten werden geladen. Das kann einige Sekunden dauern."
+      },
+      "error": {
+        "already_configured": "Für diesen Standort gibt es bereits einen Ort.",
+        "low_coverage_confirm": "Setze den Haken, um den Ort trotzdem hinzuzufügen.",
+        "no_building_at_location": "Im Umkreis von 25 m um diesen Punkt wurde kein Gebäude gefunden.",
+        "invalid_obstacle": "Richtungen müssen 0-360° und der Höhenwinkel 1-90° betragen."
+      },
+      "abort": {
+        "entry_not_loaded": "Sunspots läuft nicht. Prüfe die Integrationsseite und versuche es erneut.",
+        "fetch_failed": "Gebäudedaten konnten nicht geladen werden: {error}",
+        "already_configured": "Für diesen Standort gibt es bereits einen Ort.",
+        "reconfigure_successful": "Ort aktualisiert.",
+        "correction_added": "Korrektur gespeichert. Die Sonnenzeiten wurden neu berechnet.",
+        "correction_deleted": "Korrekturen gelöscht. Die Sonnenzeiten wurden neu berechnet.",
+        "no_corrections": "Es gibt keine Korrekturen zum Löschen.",
+        "refresh_done": "Gebäudedaten aktualisiert."
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "sunny": {
+        "name": "Sonnig"
+      },
+      "sunny_weather_aware": {
+        "name": "Sonnig (wetterabhängig)"
+      }
+    },
+    "sensor": {
+      "next_change": {
+        "name": "Nächster Wechsel"
+      },
+      "sun_remaining": {
+        "name": "Verbleibende Sonne"
+      },
+      "sun_hours_today": {
+        "name": "Sonnenstunden heute"
+      },
+      "data_quality": {
+        "name": "Datenqualität"
+      },
+      "sunny_now": {
+        "name": "Sonnige Orte"
+      }
+    }
+  },
+  "issues": {
+    "low_coverage": {
+      "title": "Bei einigen Orten sind die Gebäudehöhen größtenteils geschätzt",
+      "description": "Bei {spots} stammen weniger als {threshold} % der Skyline aus gemessenen Gebäudehöhen. Die Schattenzeiten können abweichen. Öffne beim Ort „Neu konfigurieren“ und dann „Korrekturen“, um die Höhen nahegelegener Gebäude zu setzen, oder vergleiche mit deiner Beobachtung und nutze die Aktion „Kalibrieren“."
+    },
+    "buildings_unavailable": {
+      "title": "Gebäudedaten konnten nicht geladen werden",
+      "description": "Sunspots konnte keine Gebäudedaten abrufen: {error}. Es arbeitet mit den gespeicherten Daten weiter. Versuche es später erneut oder erlaube Overpass in den Sunspots-Optionen als alternative Quelle (sendet Ortskoordinaten an einen öffentlichen Server)."
+    }
+  },
+  "exceptions": {
+    "no_building_at_location": {
+      "message": "Im Umkreis von 25 m um diesen Punkt wurde kein Gebäude gefunden."
+    },
+    "invalid_obstacle": {
+      "message": "Ungültiges Hindernis: {error}"
+    },
+    "sun_below_horizon": {
+      "message": "Die Sonne steht zu diesem Zeitpunkt unter dem Horizont, es gibt nichts zu kalibrieren."
+    },
+    "refresh_failed": {
+      "message": "Gebäudedaten konnten nicht aktualisiert werden: {error}"
+    }
+  },
+  "services": {
+    "get_sun_forecast": {
+      "name": "Sonnenvorhersage abrufen",
+      "description": "Liefert die sonnigen Zeitfenster für einen Tag.",
+      "fields": {
+        "date": {
+          "name": "Datum",
+          "description": "Lokales Datum; Standard ist heute."
+        }
+      }
+    },
+    "refresh_buildings": {
+      "name": "Gebäude aktualisieren",
+      "description": "Lädt frische Gebäudedaten für den Ort."
+    },
+    "set_building_height": {
+      "name": "Gebäudehöhe setzen",
+      "description": "Überschreibt die Höhe des Gebäudes an einem Punkt.",
+      "fields": {
+        "latitude": {
+          "name": "Breitengrad",
+          "description": "Ein Punkt auf dem Gebäude."
+        },
+        "longitude": {
+          "name": "Längengrad",
+          "description": "Ein Punkt auf dem Gebäude."
+        },
+        "height": {
+          "name": "Höhe",
+          "description": "Tatsächliche Höhe in Metern."
+        }
+      }
+    },
+    "calibrate": {
+      "name": "Kalibrieren",
+      "description": "Teilt Sunspots mit, was du gerade siehst oder zu einer bestimmten Zeit gesehen hast, und ergänzt eine Korrektur, wenn das Modell abweicht.",
+      "fields": {
+        "observed": {
+          "name": "Beobachtet",
+          "description": "War der Ort in der Sonne oder im Schatten?"
+        },
+        "at": {
+          "name": "Zeit",
+          "description": "Wann du es beobachtet hast; Standard ist jetzt."
+        }
+      }
+    }
+  }
+}

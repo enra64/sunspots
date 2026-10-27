@@ -1,0 +1,57 @@
+# "Now" view: which spots are in the sun right now, and until/from when.
+# Paste into a dashboard view (raw configuration editor) or add the cards one by one.
+title: Sunspots
+path: sunspots-now
+icon: mdi:weather-sunny
+cards:
+  # Summary banner from the hub sensor. Works as soon as one spot is configured.
+  - type: tile
+    entity: sensor.sunspots_sunny_spots
+    name: Sunny spots right now
+    icon: mdi:white-balance-sunny
+    state_content:
+      - state
+      - spots
+
+  # One line per spot, generated from the integration's own entities.
+  # (Shaded and sunny spots both appear; "until" is today's next change.)
+  - type: markdown
+    title: Right now
+    content: >-
+      {% set ns_all = namespace(n=0) %}
+      {% for s in integration_entities('sunspots')
+         if s.startswith('binary_sensor.') and state_attr(s, 'intervals_today') is not none %}
+      {% set ns_all.n = ns_all.n + 1 %}
+      {% set ns = namespace(when=none) %}
+      {% for iv in state_attr(s, 'intervals_today') %}
+      {% if ns.when is none %}
+      {% if is_state(s, 'on') and as_timestamp(iv[0]) <= as_timestamp(now()) < as_timestamp(iv[1]) %}
+      {% set ns.when = iv[1] %}
+      {% elif is_state(s, 'off') and as_timestamp(iv[0]) > as_timestamp(now()) %}
+      {% set ns.when = iv[0] %}
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+      {% set name = state_attr(s, 'friendly_name') | replace(' Sunny', '') %}
+      {% if is_state(s, 'on') %}
+      - ☀️ **{{ name }}** is in the sun{% if ns.when %} until {{ as_timestamp(ns.when) | timestamp_custom('%H:%M') }}{% endif %}
+      {% elif ns.when %}
+      - 🌥️ **{{ name }}** is shaded until {{ as_timestamp(ns.when) | timestamp_custom('%H:%M') }}
+      {% else %}
+      - 🌑 **{{ name }}** gets no more direct sun today
+      {% endif %}
+      {% endfor %}
+      {% if ns_all.n == 0 %}No Sunspots spots set up yet.{% endif %}
+
+  # Hand-picked variant for one spot (replace the entity ids with yours).
+  - type: entities
+    title: Cafe Schneiderei
+    entities:
+      - entity: binary_sensor.cafe_schneiderei_sunny
+        name: In the sun
+      - entity: sensor.cafe_schneiderei_next_change
+        name: Next change
+      - entity: sensor.cafe_schneiderei_sun_remaining
+        name: Sun remaining
+      - entity: sensor.cafe_schneiderei_sun_hours_today
+        name: Sun hours today

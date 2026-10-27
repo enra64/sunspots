@@ -1,0 +1,9 @@
+Fixtures in this directory contain data extracted from Overture Maps Foundation
+building data (release 2026-10-21.0), which includes OpenStreetMap data.
+
+(c) OpenStreetMap contributors, Overture Maps Foundation.
+Licensed under the Open Database License (ODbL) 1.0:
+https://opendatacommons.org/licenses/odbl/1-0/
+
+This notice applies to this directory only. The rest of the repository is
+licensed under Apache-2.0 (see ../../LICENSE).

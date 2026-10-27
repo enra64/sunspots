@@ -1,0 +1,15 @@
+name: Bug
+description: Something does not work.
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Diagnostics and log
+      description: Attach diagnostics and relevant log lines (no coordinates are included in diagnostics).
+  - type: input
+    attributes:
+      label: Home Assistant version and install type
