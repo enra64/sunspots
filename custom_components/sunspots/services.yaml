@@ -65,3 +65,14 @@ calibrate:
       required: false
       selector:
         datetime:
+
+render_shadow_map:
+  target:
+    entity:
+      integration: sunspots
+      domain: binary_sensor
+  fields:
+    time:
+      required: false
+      selector:
+        datetime:

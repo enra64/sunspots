@@ -24,7 +24,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .buildings_service import BuildingsService, ChunkSet
-from .const import DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE, REFRESH_INTERVAL_DAYS
+from .const import DOMAIN, ISSUE_BUILDINGS_UNAVAILABLE, MAP_PAYLOAD_BUDGET, REFRESH_INTERVAL_DAYS
 from .core.buildings import derive_buildings
 from .core.const import ALGO_VERSION, SUN_DISC_MARGIN_DEG
 from .core.corrections import (
@@ -33,6 +33,7 @@ from .core.corrections import (
     HorizonEntry,
     calibration_entry,
     match_building,
+    override_heights,
     validate_entry,
 )
 from .core.forecast import (
@@ -41,9 +42,11 @@ from .core.forecast import (
     build_day_forecast,
     cloud_percent,
 )
+from .core.heights import resolve_all
 from .core.horizon import FloatArray, horizon_at
 from .core.models import Building
 from .core.providers.base import ProviderError
+from .core.render import shadow_polygons, to_svg
 from .core.solar import sun_position
 from .core.spot import SpotModel, build_spot_model, final_horizon
 from .core.timeline import Timeline, compute_timeline, is_sunny
@@ -95,6 +98,31 @@ class SpotData:
     timeline: Timeline
     window_date: date
     building_count: int
+
+
+MAP_TEXT = {
+    "en": {
+        "below": "sun below horizon",
+        "title": "Shadow map of {name}",
+        "sun": "sun {az}° / {el}°",
+    },
+    "de": {
+        "below": "Sonne unter dem Horizont",
+        "title": "Schattenkarte von {name}",
+        "sun": "Sonne {az}° / {el}°",
+    },
+}
+MAP_ZOOM_STEPS = (1.0, 0.6, 0.4)
+
+
+@dataclass(slots=True)
+class MapResult:
+    """A rendered shadow map."""
+
+    svg: str
+    time: datetime
+    sun_azimuth: float
+    sun_elevation: float
 
 
 @dataclass(slots=True)
@@ -567,6 +595,49 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
             (max(a, start), min(b, end)) for a, b in timeline.intervals if b > start and a < end
         ]
         return DayResult(intervals, self._compute_forecast(data, day, timeline))
+
+    # ------------------------------------------------------------------ shadow map
+    async def async_render_map(self, when: datetime) -> MapResult:
+        """Render the shadow view for an instant (CPU work in the executor)."""
+        when = when.astimezone(UTC)
+        az, el = sun_position(self.settings.latitude, self.settings.longitude, when)
+        texts = MAP_TEXT.get(self.hass.config.language.split("-")[0], MAP_TEXT["en"])
+        local = dt_util.as_local(when)
+        caption = f"{local:%Y-%m-%d %H:%M}"
+        caption += (
+            f" · {texts['below']}"
+            if el <= 0
+            else f" · {texts['sun'].format(az=round(az), el=round(el))}"
+        )
+        buildings = self._buildings
+        overrides = override_heights(
+            buildings, self.settings.latitude, self.settings.longitude, self._corrections.overrides
+        )
+        params = self.settings.parameters(self._hub)
+        title = texts["title"].format(name=self.settings.name)
+        attribution = self._meta.attribution
+
+        def work() -> str:
+            heights, sources = resolve_all(buildings, params.heights, overrides)
+            shadows = shadow_polygons(buildings, heights, az, el, params.h_obs, params.radius)
+            svg = ""
+            for zoom in MAP_ZOOM_STEPS:
+                svg = to_svg(
+                    buildings,
+                    sources,
+                    shadows,
+                    radius=params.radius * zoom,
+                    sun_azimuth=az,
+                    sun_elevation=el,
+                    caption=caption,
+                    attribution=attribution,
+                    title=title,
+                )
+                if len(svg.encode()) <= MAP_PAYLOAD_BUDGET:
+                    return svg
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="map_too_large")
+
+        return MapResult(await self.hass.async_add_executor_job(work), when, az, el)
 
     # ---------------------------------------------------------------- lifecycle
     @callback

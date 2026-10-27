@@ -1,6 +1,6 @@
 [project]
 name = "sunspots"
-version = "0.2.0"
+version = "0.3.0"
 description = "Home Assistant integration: is this outdoor spot in the sun?"
 requires-python = ">=3.14"
 license = "Apache-2.0"
@@ -23,3 +23,4 @@ python_version = "3.14"
 strict = true
 files = ["custom_components/sunspots/core"]
 ignore_missing_imports = true
+follow_imports = "silent"  # only the listed files (core/) are checked

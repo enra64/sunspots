@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 (pre-release)
+
+- Shadow view: `image.<spot>_shadow_map` (SVG, cached 5 min, buildings-only at night) and the
+  `sunspots.render_shadow_map` action (optional `time`, returns the SVG).
+- `custom:sunspots-card` with modes `overview`, `timeline` and `map` (time slider), bundled with the
+  integration and registered automatically (needs `http` and `frontend`).
+- Pure renderer in `core/render.py`: shadows on the observer plane, courtyards, height-source colours
+  with hatching for guessed heights, escaped text, no scripting content.
+- CI: frontend typecheck/test/build and a drift check for the committed bundle.
+
 ## 0.2.0 (pre-release)
 
 - `sensor.<spot>_sun_forecast` (enum: sunny now / partly sunny / sunny later / partly sunny later / no sun today)

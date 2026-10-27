@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import Any
 
 import probatio as vol
+from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, Platform
 from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.helpers import config_validation as cv
@@ -16,11 +19,14 @@ from homeassistant.loader import async_get_integration
 
 from .buildings_service import BuildingsService
 from .const import (
+    CARD_FILE,
     DOMAIN,
     SERVICE_CALIBRATE,
     SERVICE_GET_SUN_FORECAST,
     SERVICE_REFRESH_BUILDINGS,
+    SERVICE_RENDER_SHADOW_MAP,
     SERVICE_SET_BUILDING_HEIGHT,
+    STATIC_URL,
     SUBENTRY_SPOT,
 )
 from .coordinator import SpotCoordinator
@@ -38,7 +44,7 @@ from .issues import async_update_coverage_issue
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.IMAGE, Platform.SENSOR]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 # Spots refreshed before the platforms load; the rest are computed in the background, staggered.
@@ -86,6 +92,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         "async_calibrate",
         SupportsResponse.OPTIONAL,
     )
+    register(
+        SERVICE_RENDER_SHADOW_MAP,
+        {vol.Optional("time"): cv.datetime},
+        "async_render_shadow_map",
+        SupportsResponse.ONLY,
+    )
+
+    integration = await async_get_integration(hass, DOMAIN)
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(STATIC_URL, str(Path(__file__).parent / "frontend"), cache_headers=False)]
+    )
+    add_extra_js_url(hass, f"{STATIC_URL}/{CARD_FILE}?v={integration.version}")
     return True
 
 

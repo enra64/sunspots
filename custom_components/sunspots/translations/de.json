@@ -213,6 +213,11 @@
           "no_sun_today": "Heute keine Sonne"
         }
       }
+    },
+    "image": {
+      "shadow_map": {
+        "name": "Schattenkarte"
+      }
     }
   },
   "issues": {
@@ -237,6 +242,9 @@
     },
     "refresh_failed": {
       "message": "Gebäudedaten konnten nicht aktualisiert werden: {error}"
+    },
+    "map_too_large": {
+      "message": "Die Schattenkarte ist zu groß zum Senden, selbst herangezoomt."
     }
   },
   "services": {
@@ -283,6 +291,16 @@
         "at": {
           "name": "Zeit",
           "description": "Wann du es beobachtet hast; Standard ist jetzt."
+        }
+      }
+    },
+    "render_shadow_map": {
+      "name": "Schattenkarte zeichnen",
+      "description": "Liefert eine SVG-Draufsicht auf die Gebäude und ihre Schatten für eine Zeit (Standard: jetzt).",
+      "fields": {
+        "time": {
+          "name": "Zeit",
+          "description": "Lokale Zeit; Standard ist jetzt."
         }
       }
     }

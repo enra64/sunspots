@@ -49,6 +49,11 @@ SERVICE_GET_SUN_FORECAST: Final = "get_sun_forecast"
 SERVICE_REFRESH_BUILDINGS: Final = "refresh_buildings"
 SERVICE_SET_BUILDING_HEIGHT: Final = "set_building_height"
 SERVICE_CALIBRATE: Final = "calibrate"
+SERVICE_RENDER_SHADOW_MAP: Final = "render_shadow_map"
+STATIC_URL: Final = "/sunspots_static"
+CARD_FILE: Final = "sunspots-card.js"
+MAP_PAYLOAD_BUDGET: Final = 300_000
+MAP_CACHE_SECONDS: Final = 300
 
 # Repairs
 ISSUE_LOW_COVERAGE: Final = "low_coverage"

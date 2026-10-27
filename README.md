@@ -5,8 +5,8 @@ how much sun will it get today? Sunspots answers this in Home Assistant from pub
 and the position of the sun. No account, no cloud service: everything is calculated and stored
 in your own Home Assistant.
 
-> **Status: 0.2.0 pre-release.** Sun/shade geometry and the cloud-aware forecast work; the shadow map and
-> the dashboard card come in a later version. Accuracy depends on how well your area is mapped,
+> **Status: 0.3.0 pre-release.** Sun/shade geometry, the cloud-aware forecast, the shadow map and the
+> dashboard card work; accuracy has not been validated against real observations yet. Accuracy depends on how well your area is mapped,
 > see [Accuracy](#accuracy).
 
 ## Install
@@ -30,15 +30,26 @@ Per spot (one device each):
 | `sensor.<spot>_sun_remaining` | Minutes of continuous sun left (0 when shaded). |
 | `sensor.<spot>_sun_hours_today` | Sunny hours for today (buildings only, local midnight to midnight). |
 | `sensor.<spot>_sun_forecast` | Rest of today: *sunny now*, *partly sunny now*, *sunny later*, *partly sunny later*, *no sun today*. Attributes: `windows` (sunny / partly / unlikely, with `past`), `best_window`, `hourly`, `forecast_available`, `forecast_resolution`. |
+| `image.<spot>_shadow_map` | Top-down picture of the buildings and shadows now (SVG). |
 | `sensor.<spot>_data_quality` | Disabled by default. Share of the skyline with measured building heights, sources, release. |
 
 Hub: `sensor.sunspots_sunny_spots` counts sunny spots (weather-aware where configured); its `next_window` attribute names the next sunny window across all spots.
 
 **Actions** (target a spot's `_sunny` entity): `sunspots.get_sun_forecast` (sunlit intervals for a
 day, returns a response), `sunspots.refresh_buildings`, `sunspots.set_building_height`,
-`sunspots.calibrate`.
+`sunspots.calibrate`, `sunspots.render_shadow_map` (returns an SVG for any time).
 
 Dashboards ("Now", "Today", morning notification) are in [docs/dashboards](docs/dashboards/README.md); which weather integrations work is in [docs/weather-providers.md](docs/weather-providers.md).
+
+### The card and the shadow view
+
+The integration ships `custom:sunspots-card` (no separate install). Modes: `overview`, `timeline`, `map`
+(shadow picture with a time slider). See [docs/card.md](docs/card.md).
+
+![Shadow map example](docs/images/shadow-map-example.svg)
+
+Colours show where a building's height comes from (blue-grey = measured, hatched = guessed from type or
+a default, green = set by you); the dashed line points to the sun.
 
 ### Weather and forecast
 

@@ -213,6 +213,11 @@
           "no_sun_today": "No sun today"
         }
       }
+    },
+    "image": {
+      "shadow_map": {
+        "name": "Shadow map"
+      }
     }
   },
   "issues": {
@@ -237,6 +242,9 @@
     },
     "refresh_failed": {
       "message": "Building data could not be refreshed: {error}"
+    },
+    "map_too_large": {
+      "message": "The shadow map is too large to send, even zoomed in."
     }
   },
   "services": {
@@ -283,6 +291,16 @@
         "at": {
           "name": "Time",
           "description": "When you observed it; defaults to now."
+        }
+      }
+    },
+    "render_shadow_map": {
+      "name": "Render shadow map",
+      "description": "Returns a top-down SVG of the buildings and their shadows for a time (default now).",
+      "fields": {
+        "time": {
+          "name": "Time",
+          "description": "Local time to draw; defaults to now."
         }
       }
     }

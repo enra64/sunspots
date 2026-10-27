@@ -37,6 +37,7 @@ async def test_setup_entities_unique_ids_and_states(hass, fake_fetcher, freezer)
             "sun_remaining",
             "sun_hours_today",
             "sun_forecast",
+            "shadow_map",
             "data_quality",
         )
     } | {f"{entry.entry_id}_sunny_now"}
