@@ -30,6 +30,7 @@ Per spot (one device each):
 | `sensor.<spot>_sun_remaining` | Minutes of continuous sun left (0 when shaded). |
 | `sensor.<spot>_sun_hours_today` | Sunny hours for today (buildings only, local midnight to midnight). |
 | `sensor.<spot>_sun_forecast` | Rest of today: *sunny now*, *partly sunny now*, *sunny later*, *partly sunny later*, *no sun today*. Attributes: `windows` (sunny / partly / unlikely, with `past`), `best_window`, `hourly`, `forecast_available`, `forecast_resolution`. |
+| `sensor.<spot>_sun_tomorrow` | When tomorrow's first sunny (else partly sunny) window starts. Attributes: `intervals`, `sun_hours`, `windows`, `best_window` (cloud-aware as far as your forecast reaches). `binary_sensor.<spot>_sunny` also has `intervals_tomorrow`. |
 | `image.<spot>_shadow_map` | Top-down picture of the buildings and shadows now (SVG). |
 | `sensor.<spot>_data_quality` | Disabled by default. Share of the skyline with measured building heights, sources, release. |
 
@@ -37,14 +38,16 @@ Hub: `sensor.sunspots_sunny_spots` counts sunny spots (weather-aware where confi
 
 **Actions** (target a spot's `_sunny` entity): `sunspots.get_sun_forecast` (sunlit intervals for a
 day, returns a response), `sunspots.refresh_buildings`, `sunspots.set_building_height`,
-`sunspots.calibrate`, `sunspots.render_shadow_map` (returns an SVG for any time).
+`sunspots.calibrate`, `sunspots.render_shadow_map` (returns an SVG for any time, `theme: light|dark`).
 
 Dashboards ("Now", "Today", morning notification) are in [docs/dashboards](docs/dashboards/README.md); which weather integrations work is in [docs/weather-providers.md](docs/weather-providers.md).
 
 ### The card and the shadow view
 
-The integration ships `custom:sunspots-card` (no separate install). Modes: `overview`, `timeline`, `map`
-(shadow picture with a time slider). See [docs/card.md](docs/card.md).
+The integration ships two cards (no separate install): `custom:sunspots-card` with the modes `overview`,
+`timeline` (today and tomorrow, with times) and `map` (shadow picture with a time slider), and
+`custom:sunspots-shadow-card`, the current shadow picture with automatic refresh that follows the dark theme.
+See [docs/card.md](docs/card.md).
 
 ![Shadow map example](docs/images/shadow-map-example.svg)
 

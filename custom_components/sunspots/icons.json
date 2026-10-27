@@ -1,13 +1,29 @@
 {
   "entity": {
     "binary_sensor": {
-      "sunny": {"default": "mdi:weather-sunny-off", "state": {"on": "mdi:weather-sunny"}},
-      "sunny_weather_aware": {"default": "mdi:weather-partly-cloudy", "state": {"on": "mdi:weather-sunny"}}
+      "sunny": {
+        "default": "mdi:weather-sunny-off",
+        "state": {
+          "on": "mdi:weather-sunny"
+        }
+      },
+      "sunny_weather_aware": {
+        "default": "mdi:weather-partly-cloudy",
+        "state": {
+          "on": "mdi:weather-sunny"
+        }
+      }
     },
     "sensor": {
-      "next_change": {"default": "mdi:clock-start"},
-      "sun_remaining": {"default": "mdi:timer-sand"},
-      "sun_hours_today": {"default": "mdi:white-balance-sunny"},
+      "next_change": {
+        "default": "mdi:clock-start"
+      },
+      "sun_remaining": {
+        "default": "mdi:timer-sand"
+      },
+      "sun_hours_today": {
+        "default": "mdi:white-balance-sunny"
+      },
       "sun_forecast": {
         "default": "mdi:weather-sunny-alert",
         "state": {
@@ -18,18 +34,37 @@
           "no_sun_today": "mdi:weather-sunny-off"
         }
       },
-      "data_quality": {"default": "mdi:database-check"},
-      "sunny_now": {"default": "mdi:counter"}
+      "data_quality": {
+        "default": "mdi:database-check"
+      },
+      "sunny_now": {
+        "default": "mdi:counter"
+      },
+      "sun_tomorrow": {
+        "default": "mdi:weather-sunset-up"
+      }
     },
     "image": {
-      "shadow_map": {"default": "mdi:map-marker-radius"}
+      "shadow_map": {
+        "default": "mdi:map-marker-radius"
+      }
     }
   },
   "services": {
-    "get_sun_forecast": {"service": "mdi:calendar-clock"},
-    "refresh_buildings": {"service": "mdi:cloud-download"},
-    "set_building_height": {"service": "mdi:office-building-cog"},
-    "calibrate": {"service": "mdi:crosshairs-gps"},
-    "render_shadow_map": {"service": "mdi:image-filter-hdr"}
+    "get_sun_forecast": {
+      "service": "mdi:calendar-clock"
+    },
+    "refresh_buildings": {
+      "service": "mdi:cloud-download"
+    },
+    "set_building_height": {
+      "service": "mdi:office-building-cog"
+    },
+    "calibrate": {
+      "service": "mdi:crosshairs-gps"
+    },
+    "render_shadow_map": {
+      "service": "mdi:image-filter-hdr"
+    }
   }
 }

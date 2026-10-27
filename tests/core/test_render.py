@@ -224,3 +224,18 @@ def test_real_tile_payload_is_within_budget():
         )
         assert len(svg) < 300_000, len(svg)
         ET.fromstring(svg)
+
+
+def test_dark_theme_has_its_own_palette_and_stays_safe():
+    b = box("b", 10, 10, 20, 20, 12.0)
+    common = dict(
+        radius=RADIUS, sun_azimuth=90, sun_elevation=30, caption="c", attribution="a", title="t"
+    )
+    light = to_svg([b], ["class"], [], **common)
+    dark = to_svg([b], ["class"], [], theme="dark", **common)
+    assert 'fill="#ece9e2"' in light and 'fill="#171d24"' in dark
+    assert light != dark and 'stroke="#171d24"' in dark  # hatch lines use the background colour
+    ET.fromstring(dark)
+    assert (
+        to_svg([b], ["class"], [], theme="nonsense", **common) == light
+    )  # unknown theme falls back

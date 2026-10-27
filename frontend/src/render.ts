@@ -1,3 +1,5 @@
+import type { Theme } from "./types";
+
 export const MAX_SVG_BYTES = 300 * 1024;
 
 export type SvgCheck = { ok: true; svg: string } | { ok: false; reason: "invalid" | "too_large" };
@@ -49,12 +51,17 @@ export function parseRenderResponse(raw: unknown, entityId: string): MapParse {
   };
 }
 
-export function renderShadowMapMessage(entityId: string, isoTime: string): Record<string, unknown> {
+/** Service call for one entity; without `isoTime` the integration renders the current moment. */
+export function renderShadowMapMessage(
+  entityId: string,
+  isoTime: string | undefined,
+  theme: Theme,
+): Record<string, unknown> {
   return {
     type: "call_service",
     domain: "sunspots",
     service: "render_shadow_map",
-    service_data: { time: isoTime },
+    service_data: isoTime === undefined ? { theme } : { time: isoTime, theme },
     target: { entity_id: entityId },
     return_response: true,
   };

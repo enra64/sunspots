@@ -16,8 +16,16 @@ export interface Strings {
   legend_unlikely: string;
   legend_geometry: string;
   now: string;
-  timeline_alt: string;
+  timeline_bar_alt: string;
   timeline_none: string;
+  day_today: string;
+  day_tomorrow: string;
+  sun_summary: string;
+  partly_summary: string;
+  no_direct_sun: string;
+  first_sun: string;
+  hours_short: string;
+  refresh: string;
   map_time: string;
   map_alt: string;
   map_loading: string;
@@ -31,6 +39,8 @@ export interface Strings {
   default_title: string;
   card_name: string;
   card_description: string;
+  shadow_card_name: string;
+  shadow_card_description: string;
 }
 
 export type StringKey = keyof Strings;
@@ -55,8 +65,16 @@ const en: Strings = {
   legend_unlikely: "Sun unlikely",
   legend_geometry: "Sun (no weather forecast)",
   now: "Now",
-  timeline_alt: "{name}: {summary}",
+  timeline_bar_alt: "{name}, {day}: {summary}",
   timeline_none: "no sun in this period",
+  day_today: "Today",
+  day_tomorrow: "Tomorrow",
+  sun_summary: "Sun: {ranges} · {hours}",
+  partly_summary: "Partly sunny: {ranges} · {hours}",
+  no_direct_sun: "No direct sun",
+  first_sun: "first sun {time}",
+  hours_short: "{hours} h",
+  refresh: "Refresh",
   map_time: "Shown for {time}",
   map_alt: "Shadow map of {name} at {time}",
   map_loading: "Loading map…",
@@ -70,6 +88,8 @@ const en: Strings = {
   default_title: "Sunspots",
   card_name: "Sunspots",
   card_description: "Sun and shade status, timeline and shadow map for your spots",
+  shadow_card_name: "Sunspots shadow map",
+  shadow_card_description: "Current shadow map of one spot, refreshed automatically, with dark mode",
 };
 
 const de: Strings = {
@@ -90,8 +110,16 @@ const de: Strings = {
   legend_unlikely: "Sonne unwahrscheinlich",
   legend_geometry: "Sonne (ohne Wettervorhersage)",
   now: "Jetzt",
-  timeline_alt: "{name}: {summary}",
+  timeline_bar_alt: "{name}, {day}: {summary}",
   timeline_none: "keine Sonne in diesem Zeitraum",
+  day_today: "Heute",
+  day_tomorrow: "Morgen",
+  sun_summary: "Sonne: {ranges} · {hours}",
+  partly_summary: "Teils sonnig: {ranges} · {hours}",
+  no_direct_sun: "Keine direkte Sonne",
+  first_sun: "erste Sonne {time}",
+  hours_short: "{hours} Std.",
+  refresh: "Aktualisieren",
   map_time: "Dargestellt für {time}",
   map_alt: "Schattenkarte von {name} um {time}",
   map_loading: "Karte wird geladen …",
@@ -105,6 +133,8 @@ const de: Strings = {
   default_title: "Sunspots",
   card_name: "Sunspots",
   card_description: "Sonnen- und Schattenstatus, Zeitleiste und Schattenkarte für deine Orte",
+  shadow_card_name: "Sunspots Schattenkarte",
+  shadow_card_description: "Aktuelle Schattenkarte eines Ortes, automatisch aktualisiert, mit Dunkelmodus",
 };
 
 export const DICTIONARIES: Dictionaries = { en, de };

@@ -2,20 +2,39 @@ import { type StringKey, translate } from "./locale";
 
 const clockFormatters = new Map<string, Intl.DateTimeFormat>();
 
-/** Format wall minutes as a clock time (no date) with the HA language. */
-export function formatClock(minutes: number, language: string | undefined): string {
+function wallFormatter(language: string | undefined, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   const lang = language ?? "en";
-  let f = clockFormatters.get(lang);
+  const cacheKey = `${lang}|${options.minute ?? ""}`;
+  let f = clockFormatters.get(cacheKey);
   if (!f) {
     try {
-      f = new Intl.DateTimeFormat(lang, { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+      f = new Intl.DateTimeFormat(lang, { ...options, timeZone: "UTC" });
     } catch {
-      f = new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+      f = new Intl.DateTimeFormat("en", { ...options, timeZone: "UTC" });
     }
-    clockFormatters.set(lang, f);
+    clockFormatters.set(cacheKey, f);
   }
+  return f;
+}
+
+function formatWall(minutes: number, f: Intl.DateTimeFormat): string {
   const inDay = ((Math.round(minutes) % 1440) + 1440) % 1440;
   return f.format(new Date(inDay * 60_000));
+}
+
+/** Format wall minutes as a clock time (no date) with the HA language. */
+export function formatClock(minutes: number, language: string | undefined): string {
+  return formatWall(minutes, wallFormatter(language, { hour: "2-digit", minute: "2-digit" }));
+}
+
+/** Short hour-only label for axis ticks ("14", "2 PM"; 24h or 12h per locale). */
+export function formatHourLabel(minutes: number, language: string | undefined): string {
+  return formatWall(minutes, wallFormatter(language, { hour: "numeric" }));
+}
+
+/** Decimal number with at most one fraction digit in the HA language. */
+export function formatNumber(value: number, language: string | undefined): string {
+  return new Intl.NumberFormat(language ?? "en", { maximumFractionDigits: 1 }).format(value);
 }
 
 /** Clock time, prefixed with "tomorrow" when the instant is not today. */
@@ -34,5 +53,5 @@ export function formatBoundary(
 }
 
 export function formatDegrees(value: number, language: string | undefined): string {
-  return `${new Intl.NumberFormat(language ?? "en", { maximumFractionDigits: 1 }).format(value)}°`;
+  return `${formatNumber(value, language)}°`;
 }

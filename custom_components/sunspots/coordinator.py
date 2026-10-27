@@ -199,6 +199,7 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         self.gate = CloudGate(hub.cloud_threshold_sunny)
         self.cloud: float | None = None
         self.forecast_day: DayForecast | None = None
+        self.tomorrow: DayResult | None = None
         self._unsub_forecast: CALLBACK_TYPE | None = None
         self._model: SpotModel
         self._meta: SpotMeta
@@ -353,6 +354,7 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
             data = await self._compute_data(now, today)
             self._dirty = False
         self.forecast_day = self._compute_forecast(data, today)
+        self.tomorrow = self._day_in_window(data, today + timedelta(days=1))
         self._schedule(data, now)
         return data
 
@@ -401,6 +403,9 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
     def _async_forecast_updated(self) -> None:
         if self.data is not None:
             self.forecast_day = self._compute_forecast(self.data, self.data.window_date)
+            self.tomorrow = self._day_in_window(
+                self.data, self.data.window_date + timedelta(days=1)
+            )
             self.async_update_listeners()
 
     @callback
@@ -576,6 +581,17 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
             _LOGGER.debug("Scheduled building refresh failed; keeping cached data", exc_info=True)
 
     # ----------------------------------------------------------------- forecast
+    def _day_in_window(
+        self, data: SpotData, day: date, timeline: Timeline | None = None
+    ) -> DayResult:
+        """Intervals and forecast windows for a day the timeline already covers."""
+        start, end = local_day_bounds(day)
+        timeline = timeline or data.timeline
+        intervals = [
+            (max(a, start), min(b, end)) for a, b in timeline.intervals if b > start and a < end
+        ]
+        return DayResult(intervals, self._compute_forecast(data, day, timeline))
+
     async def async_day(self, day: date) -> DayResult:
         """Intervals and forecast windows for a local calendar day (computed on demand
         when the day lies outside the two-day timeline window)."""
@@ -591,13 +607,10 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
                 start,
                 end,
             )
-        intervals = [
-            (max(a, start), min(b, end)) for a, b in timeline.intervals if b > start and a < end
-        ]
-        return DayResult(intervals, self._compute_forecast(data, day, timeline))
+        return self._day_in_window(data, day, timeline)
 
     # ------------------------------------------------------------------ shadow map
-    async def async_render_map(self, when: datetime) -> MapResult:
+    async def async_render_map(self, when: datetime, theme: str = "light") -> MapResult:
         """Render the shadow view for an instant (CPU work in the executor)."""
         when = when.astimezone(UTC)
         az, el = sun_position(self.settings.latitude, self.settings.longitude, when)
@@ -632,6 +645,7 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
                     caption=caption,
                     attribution=attribution,
                     title=title,
+                    theme=theme,
                 )
                 if len(svg.encode()) <= MAP_PAYLOAD_BUDGET:
                     return svg

@@ -1,9 +1,12 @@
 import { attrNumber, attrString, findSiblings, isUnavailable, type Siblings } from "./entities";
-import { formatBoundary, formatClock } from "./format";
-import { computeTimeline, type ForecastWindow, type Range, type TimelineModel } from "./intervals";
+import { DAY_OFFSET, type DayKey, resolveHourWindow, selectDays, shiftRanges } from "./days";
+import { MAP_HOURS } from "./config";
+import { formatBoundary, formatHourLabel, formatNumber } from "./format";
+import { computeTimeline, type ForecastWindow, type Range } from "./intervals";
 import { type StringKey, translate } from "./locale";
+import { daySummary, formatRange, segmentLabel, withFirstSun } from "./summary";
 import { dayStartWall, nowMinutes, toWallMinutes } from "./time";
-import type { CardConfig, ForecastClass, Hass, HassEntityState } from "./types";
+import type { CardConfig, ForecastClass, Hass, HassEntityState, HourSetting, ShadowCardConfig } from "./types";
 
 export const MAP_STEP_MINUTES = 10;
 
@@ -35,7 +38,8 @@ export interface LegendItem {
 
 export interface TimelineTick {
   percent: number;
-  label: string;
+  /** Only every second hour is labelled; the others are plain grid lines. */
+  label?: string;
 }
 
 export interface TimelineBar {
@@ -44,17 +48,32 @@ export interface TimelineBar {
   width: number;
   kind: ForecastClass;
   past: boolean;
+  /** Time range printed inside the segment when it is wide enough. */
+  label?: string;
+}
+
+export interface TimelineDay {
+  key: DayKey;
+  /** "Today" / "Tomorrow". */
+  label: string;
+  bars: TimelineBar[];
+  /** Position of "now" in percent of the bar; today only. */
+  nowPercent: number | undefined;
+  /** True when the bar shows forecast classes rather than pure geometry. */
+  usesForecast: boolean;
+  /** One-line text summary in words. */
+  summary: string;
+  /** Text alternative for the bar. */
+  ariaLabel: string;
 }
 
 export interface TimelineRow extends RowBase {
-  timeline: TimelineModel;
-  bars: TimelineBar[];
-  /** True when the bar shows forecast classes rather than pure geometry. */
-  usesForecast: boolean;
-  legend: LegendItem[];
+  status: Status;
+  statusLabel: string;
+  icon: string;
+  days: TimelineDay[];
   ticks: TimelineTick[];
-  /** Text alternative for the bar. */
-  summary: string;
+  legend: LegendItem[];
   nowLabel: string;
 }
 
@@ -115,14 +134,18 @@ function minutesOf(ctx: Context, iso: unknown): number | undefined {
   return toWallMinutes(iso, ctx.tz, ctx.dayStart);
 }
 
-function intervalsToday(ctx: Context, state: HassEntityState | undefined): Range[] {
-  const raw = state?.attributes["intervals_today"];
+/** Parse `[startISO, endISO]` pairs or `{start, end}` objects into wall-minute ranges. */
+function parseRanges(ctx: Context, raw: unknown): Range[] {
   if (!Array.isArray(raw)) return [];
   const result: Range[] = [];
-  for (const pair of raw as unknown[]) {
-    if (!Array.isArray(pair)) continue;
-    const start = minutesOf(ctx, pair[0]);
-    const end = minutesOf(ctx, pair[1]);
+  for (const item of raw as unknown[]) {
+    const [from, to] = Array.isArray(item)
+      ? [item[0], item[1]]
+      : typeof item === "object" && item !== null
+        ? [(item as Record<string, unknown>)["start"], (item as Record<string, unknown>)["end"]]
+        : [undefined, undefined];
+    const start = minutesOf(ctx, from);
+    const end = minutesOf(ctx, to);
     if (start !== undefined && end !== undefined) result.push([start, end]);
   }
   return result;
@@ -149,24 +172,29 @@ function stateOf(ctx: Context, id: string | undefined): HassEntityState | undefi
   return id === undefined ? undefined : ctx.hass.states[id];
 }
 
-function overviewStatus(main: HassEntityState | undefined, aware: HassEntityState | undefined): Status {
+function statusOf(main: HassEntityState | undefined, aware: HassEntityState | undefined): Status {
   if (isUnavailable(main)) return "unavailable";
   if (main?.state !== "on") return "shaded";
   if (aware && !isUnavailable(aware) && aware.state === "off") return "sunny_cloudy";
   return "sunny";
 }
 
+function statusInfo(ctx: Context, siblings: Siblings, main: HassEntityState | undefined) {
+  const aware = stateOf(ctx, siblings.sunny_weather_aware);
+  const status = statusOf(main, aware);
+  return { aware, status, statusLabel: translate(ctx.language, status), icon: STATUS_ICON[status] };
+}
+
 function overviewRow(ctx: Context, siblings: Siblings, entityId: string): OverviewRow {
   const main = ctx.hass.states[entityId];
-  const aware = stateOf(ctx, siblings.sunny_weather_aware);
-  const status = overviewStatus(main, aware);
+  const { aware, status, statusLabel, icon } = statusInfo(ctx, siblings, main);
   const t = (key: StringKey, vars?: Record<string, string | number>) => translate(ctx.language, key, vars);
   const row: OverviewRow = {
     entityId,
     name: spotName(main, entityId),
     status,
-    statusLabel: t(status),
-    icon: STATUS_ICON[status],
+    statusLabel,
+    icon,
     extras: [],
   };
 
@@ -192,7 +220,7 @@ function overviewRow(ctx: Context, siblings: Siblings, entityId: string): Overvi
 
   const hours = Number(stateOf(ctx, siblings.sun_hours_today)?.state);
   if (stateOf(ctx, siblings.sun_hours_today) && Number.isFinite(hours)) {
-    row.extras.push(t("sun_hours_today", { hours: new Intl.NumberFormat(ctx.language ?? "en", { maximumFractionDigits: 1 }).format(hours) }));
+    row.extras.push(t("sun_hours_today", { hours: formatNumber(hours, ctx.language) }));
   }
   const cloud = attrNumber(aware, "cloud_coverage");
   if (cloud !== undefined && status !== "shaded" && status !== "unavailable") {
@@ -201,59 +229,129 @@ function overviewRow(ctx: Context, siblings: Siblings, entityId: string): Overvi
   return row;
 }
 
+/** Grid line per full hour inside the window; every second hour carries a label. */
 function ticks(ctx: Context, startMin: number, endMin: number): TimelineTick[] {
-  const step = (endMin - startMin) / 60 <= 10 ? 60 : 120;
   const result: TimelineTick[] = [];
-  for (let m = Math.ceil(startMin / step) * step; m <= endMin; m += step) {
-    result.push({ percent: ((m - startMin) / (endMin - startMin)) * 100, label: formatClock(m, ctx.language) });
+  for (let m = Math.ceil(startMin / 60) * 60; m <= endMin; m += 60) {
+    const percent = ((m - startMin) / (endMin - startMin)) * 100;
+    result.push(m % 120 === 0 ? { percent, label: formatHourLabel(m, ctx.language) } : { percent });
   }
   return result;
 }
 
-function timelineRow(ctx: Context, siblings: Siblings, entityId: string, config: CardConfig): TimelineRow {
-  const main = ctx.hass.states[entityId];
-  const startMin = config.startHour * 60;
-  const endMin = config.endHour * 60;
-  const windows = forecastWindows(ctx, stateOf(ctx, siblings.sun_forecast));
-  const timeline = computeTimeline({
-    geometry: intervalsToday(ctx, main),
-    forecast: windows,
-    windowStart: startMin,
-    windowEnd: endMin,
-    now: ctx.now,
-  });
-  const usesForecast = timeline.forecast.length > 0;
-  const segments = usesForecast ? timeline.forecast : timeline.geometry;
+/** Sun data of one day, in minutes since that day's own midnight. */
+interface DayData {
+  geometry: Range[];
+  windows: ForecastWindow[];
+  /** Start of the first (sunny, else partly sunny) window; tomorrow only. */
+  firstSun: number | undefined;
+}
+
+function dayData(ctx: Context, siblings: Siblings, main: HassEntityState | undefined, day: DayKey): DayData {
+  if (day === "today") {
+    return {
+      geometry: parseRanges(ctx, main?.attributes["intervals_today"]),
+      windows: forecastWindows(ctx, stateOf(ctx, siblings.sun_forecast)),
+      firstSun: undefined,
+    };
+  }
+  const offset = DAY_OFFSET.tomorrow;
+  const tomorrow = stateOf(ctx, siblings.sun_tomorrow);
+  const own = main?.attributes["intervals_tomorrow"];
+  const geometry = Array.isArray(own) ? parseRanges(ctx, own) : parseRanges(ctx, tomorrow?.attributes["intervals"]);
+  const first = minutesOf(ctx, tomorrow?.state);
+  return {
+    geometry: shiftRanges(geometry, -offset),
+    windows: forecastWindows(ctx, tomorrow).map((w) => ({ ...w, start: w.start - offset, end: w.end - offset })),
+    firstSun: first === undefined ? undefined : first - offset,
+  };
+}
+
+function timelineDay(
+  ctx: Context,
+  day: DayKey,
+  data: DayData,
+  windowStart: number,
+  windowEnd: number,
+  name: string,
+): TimelineDay {
   const t = (key: StringKey, vars?: Record<string, string | number>) => translate(ctx.language, key, vars);
-
-  const label = (kind: ForecastClass | "geometry") => t(LEGEND_KEY[kind]);
-  const parts = segments.map(
-    (s) =>
-      `${label(usesForecast ? s.kind : "geometry")} ${formatClock(s.start, ctx.language)}–${formatClock(s.end, ctx.language)}`,
-  );
-  const name = spotName(main, entityId);
-  const legendKinds: (ForecastClass | "geometry")[] = usesForecast ? ["sunny", "partly", "unlikely"] : ["geometry"];
-
-  const span = endMin - startMin;
-  const bars = segments.map(
-    (s): TimelineBar => ({
-      left: ((s.start - startMin) / span) * 100,
+  const lang = ctx.language;
+  const usesForecast = data.windows.length > 0;
+  const model = computeTimeline({
+    geometry: data.geometry,
+    forecast: data.windows,
+    windowStart,
+    windowEnd,
+    now: ctx.now - DAY_OFFSET[day],
+  });
+  const segments = usesForecast ? model.forecast : model.geometry;
+  const span = windowEnd - windowStart;
+  const bars = segments.map((s): TimelineBar => {
+    const label = segmentLabel(s, windowStart, windowEnd, lang);
+    return {
+      left: ((s.start - windowStart) / span) * 100,
       width: ((s.end - s.start) / span) * 100,
       kind: s.kind,
       past: s.past,
-    }),
-  );
+      ...(label ? { label } : {}),
+    };
+  });
 
+  const kindLabel = (kind: ForecastClass | "geometry") => t(LEGEND_KEY[kind]);
+  const parts = segments.map((s) => `${kindLabel(usesForecast ? s.kind : "geometry")} ${formatRange(s.start, s.end, lang)}`);
+
+  const windowRanges = (kind: ForecastClass): Range[] =>
+    data.windows.filter((w) => w.kind === kind).map((w): Range => [w.start, w.end]);
+  const sunny = usesForecast ? windowRanges("sunny") : data.geometry;
+  const partlyOnly = usesForecast && sunny.length === 0;
+  const text = daySummary(partlyOnly ? windowRanges("partly") : sunny, partlyOnly, lang);
+
+  const dayLabel = t(day === "today" ? "day_today" : "day_tomorrow");
+  return {
+    key: day,
+    label: dayLabel,
+    bars,
+    nowPercent: day === "today" ? model.nowPercent : undefined,
+    usesForecast,
+    summary: day === "tomorrow" ? withFirstSun(text, data.firstSun, lang) : text,
+    ariaLabel: t("timeline_bar_alt", {
+      name,
+      day: dayLabel,
+      summary: parts.length > 0 ? parts.join("; ") : t("timeline_none"),
+    }),
+  };
+}
+
+function timelineRow(ctx: Context, siblings: Siblings, entityId: string, config: CardConfig): TimelineRow {
+  const main = ctx.hass.states[entityId];
+  const name = spotName(main, entityId);
+  const days = selectDays(config.day).map((key) => ({ key, data: dayData(ctx, siblings, main, key) }));
+
+  const visible = days.flatMap(({ data }) => [
+    ...data.geometry,
+    ...data.windows.map((w): Range => [w.start, w.end]),
+  ]);
+  const [startHour, endHour] = resolveHourWindow(config.startHour, config.endHour, visible);
+  const windowStart = startHour * 60;
+  const windowEnd = endHour * 60;
+
+  const shown = days.map(({ key, data }) => timelineDay(ctx, key, data, windowStart, windowEnd, name));
+  const legendKinds: (ForecastClass | "geometry")[] = [];
+  if (shown.some((d) => d.usesForecast)) legendKinds.push("sunny", "partly", "unlikely");
+  if (shown.some((d) => !d.usesForecast && d.bars.length > 0)) legendKinds.push("geometry");
+
+  const { status, statusLabel, icon } = statusInfo(ctx, siblings, main);
   return {
     entityId,
     name,
-    timeline,
-    bars,
-    usesForecast,
-    legend: legendKinds.map((kind) => ({ kind, label: label(kind) })),
-    ticks: ticks(ctx, startMin, endMin),
-    summary: t("timeline_alt", { name, summary: parts.length > 0 ? parts.join("; ") : t("timeline_none") }),
-    nowLabel: t("now"),
+    status,
+    statusLabel,
+    icon,
+    days: shown,
+    ticks: ticks(ctx, windowStart, windowEnd),
+    legend: legendKinds.map((kind) => ({ kind, label: translate(ctx.language, LEGEND_KEY[kind]) })),
+    nowLabel: translate(ctx.language, "now"),
   };
 }
 
@@ -266,10 +364,20 @@ function missing<T extends RowBase>(ctx: Context, entityId: string, rest: Omit<T
   } as T;
 }
 
-function mapModel(ctx: Context, siblings: Siblings | undefined, entityId: string, config: CardConfig): MapModel {
+function fixedHour(setting: HourSetting, fallback: number): number {
+  return typeof setting === "number" ? setting : fallback;
+}
+
+function mapModel(
+  ctx: Context,
+  siblings: Siblings | undefined,
+  entityId: string,
+  startHour: number,
+  endHour: number,
+): MapModel {
   const main = ctx.hass.states[entityId];
-  const minMinute = config.startHour * 60;
-  const maxMinute = config.endHour * 60;
+  const minMinute = startHour * 60;
+  const maxMinute = endHour * 60;
   const snapped = Math.round(ctx.now / MAP_STEP_MINUTES) * MAP_STEP_MINUTES;
   const base = {
     minMinute,
@@ -283,35 +391,49 @@ function mapModel(ctx: Context, siblings: Siblings | undefined, entityId: string
   return { entityId, name: spotName(main, entityId), ...base, ...(attribution ? { attribution } : {}) };
 }
 
+function lookupSiblings(hass: Hass, id: string): Siblings | undefined {
+  return hass.states[id] ? findSiblings(hass, id) : undefined;
+}
+
+/** Everything `sunspots-shadow-card` needs besides the rendered image. */
+export function buildShadowViewModel(hass: Hass, config: ShadowCardConfig, now: Date): { title: string; map: MapModel } {
+  const ctx = context(hass, now);
+  return {
+    title: config.title ?? translate(ctx.language, "default_title"),
+    map: mapModel(ctx, lookupSiblings(hass, config.entity), config.entity, config.startHour, config.endHour),
+  };
+}
+
 /** Build everything the card needs to render, without touching the DOM. */
 export function buildViewModel(hass: Hass, config: CardConfig, now: Date): ViewModel {
   const ctx = context(hass, now);
   const title = config.title ?? translate(ctx.language, "default_title");
-  const lookup = (id: string) => (hass.states[id] ? findSiblings(hass, id) : undefined);
 
   if (config.mode === "map") {
     const id = config.entities[0] as string;
-    return { mode: "map", title, map: mapModel(ctx, lookup(id), id, config) };
+    const start = fixedHour(config.startHour, MAP_HOURS[0]);
+    const end = fixedHour(config.endHour, MAP_HOURS[1]);
+    return { mode: "map", title, map: mapModel(ctx, lookupSiblings(hass, id), id, start, end) };
   }
   if (config.mode === "timeline") {
     const rows = config.entities.map((id) => {
-      const siblings = lookup(id);
+      const siblings = lookupSiblings(hass, id);
       return siblings
         ? timelineRow(ctx, siblings, id, config)
         : missing<TimelineRow>(ctx, id, {
-            timeline: { geometry: [], forecast: [], nowPercent: undefined },
-            bars: [],
-            usesForecast: false,
-            legend: [],
+            status: "unavailable",
+            statusLabel: "",
+            icon: STATUS_ICON.unavailable,
+            days: [],
             ticks: [],
-            summary: "",
+            legend: [],
             nowLabel: "",
           });
     });
     return { mode: "timeline", title, rows };
   }
   const rows = config.entities.map((id) => {
-    const siblings = lookup(id);
+    const siblings = lookupSiblings(hass, id);
     return siblings
       ? overviewRow(ctx, siblings, id)
       : missing<OverviewRow>(ctx, id, { status: "unavailable", statusLabel: "", icon: STATUS_ICON.unavailable, extras: [] });

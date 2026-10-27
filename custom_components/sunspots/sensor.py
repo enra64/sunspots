@@ -38,6 +38,7 @@ async def async_setup_entry(
                 SunRemainingSensor(coordinator),
                 SunHoursTodaySensor(coordinator),
                 SunForecastSensor(coordinator),
+                SunTomorrowSensor(coordinator),
                 DataQualitySensor(coordinator),
             ],
             config_subentry_id=subentry_id,
@@ -132,6 +133,55 @@ class SunForecastSensor(SunspotsEntity, SensorEntity):
             "forecast_available": day.forecast_available,
             "forecast_resolution": self.coordinator.forecast_resolution,
             "source_entity": self.coordinator.settings.weather_entity,
+        }
+
+
+class SunTomorrowSensor(SunspotsEntity, SensorEntity):
+    """When there will be sun tomorrow: first sunny window (else first partly sunny one)."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _unrecorded_attributes = frozenset({"windows", "best_window", "intervals"})
+
+    def __init__(self, coordinator: SpotCoordinator) -> None:
+        super().__init__(coordinator, "sun_tomorrow")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.tomorrow is not None
+
+    @property
+    def native_value(self) -> datetime | None:
+        tomorrow = self.coordinator.tomorrow
+        if tomorrow is None:
+            return None
+        for cls in ("sunny", "partly"):
+            starts = [w.start for w in tomorrow.forecast.windows if w.cls == cls]
+            if starts:
+                return min(starts)
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        tomorrow = self.coordinator.tomorrow
+        if tomorrow is None:
+            return None
+        now = dt_util.utcnow()
+        best = best_window(tomorrow.forecast.windows, now)
+        return {
+            "intervals": [
+                {
+                    "start": dt_util.as_local(a).isoformat(timespec="seconds"),
+                    "end": dt_util.as_local(b).isoformat(timespec="seconds"),
+                }
+                for a, b in tomorrow.intervals
+            ],
+            "sun_hours": round(
+                sum((b - a).total_seconds() for a, b in tomorrow.intervals) / 3600, 2
+            ),
+            "windows": windows_attribute(tomorrow.forecast.windows, now),
+            "best_window": windows_attribute([best], now)[0] if best else None,
+            "forecast_available": tomorrow.forecast.forecast_available,
+            "forecast_resolution": self.coordinator.forecast_resolution,
         }
 
 

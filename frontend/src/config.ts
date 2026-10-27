@@ -1,24 +1,40 @@
-import type { CardConfig, CardMode } from "./types";
+import type { CardConfig, CardMode, DayOption, HourSetting, ShadowCardConfig, ThemeOption } from "./types";
 
 const MODES: readonly CardMode[] = ["overview", "timeline", "map"];
 const ENTITY_ID = /^binary_sensor\.[a-z0-9_]+$/;
 
-const DEFAULT_HOURS: Record<CardMode, readonly [number, number]> = {
+const DAYS: readonly DayOption[] = ["today", "tomorrow", "both"];
+const THEMES: readonly ThemeOption[] = ["auto", "light", "dark"];
+
+export const DEFAULT_REFRESH_MINUTES = 5;
+export const MIN_REFRESH_MINUTES = 1;
+export const MAX_REFRESH_MINUTES = 60;
+
+/** Default visible hours; the timeline derives them from the sun intervals. */
+export const DEFAULT_HOURS: Record<CardMode, readonly [HourSetting, HourSetting]> = {
   overview: [6, 22],
-  timeline: [6, 22],
+  timeline: ["auto", "auto"],
   map: [4, 23],
 };
+
+export const MAP_HOURS: readonly [number, number] = [4, 23];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hourOption(raw: unknown, name: string, fallback: number): number {
+function fixedHour(raw: unknown, name: string, fallback: number): number {
   if (raw === undefined) return fallback;
   if (typeof raw !== "number" || !Number.isInteger(raw) || raw < 0 || raw > 24) {
     throw new Error(`Invalid configuration: "${name}" must be an integer between 0 and 24`);
   }
   return raw;
+}
+
+function hourOption(raw: unknown, name: string, fallback: HourSetting, allowAuto: boolean): HourSetting {
+  if (raw === undefined) return fallback;
+  if (allowAuto && raw === "auto") return raw;
+  return fixedHour(raw, name, 0);
 }
 
 function entityId(raw: unknown): string {
@@ -68,12 +84,72 @@ export function parseConfig(raw: unknown): CardConfig {
   }
 
   const [defStart, defEnd] = DEFAULT_HOURS[mode];
-  const startHour = hourOption(raw["start_hour"], "start_hour", defStart);
-  const endHour = hourOption(raw["end_hour"], "end_hour", defEnd);
+  const allowAuto = mode === "timeline";
+  const startHour = hourOption(raw["start_hour"], "start_hour", defStart, allowAuto);
+  const endHour = hourOption(raw["end_hour"], "end_hour", defEnd, allowAuto);
+  if (typeof startHour === "number" && typeof endHour === "number" && startHour >= endHour) {
+    throw new Error('Invalid configuration: "start_hour" must be smaller than "end_hour"');
+  }
+
+  const day = choice(raw["day"], DAYS, "both", "day");
+
+  const type = typeof raw["type"] === "string" ? raw["type"] : "custom:sunspots-card";
+  return { type, mode, entities: ids, ...(title !== undefined ? { title } : {}), startHour, endHour, day };
+}
+
+function choice<T extends string>(raw: unknown, allowed: readonly T[], fallback: T, name: string): T {
+  if (raw === undefined) return fallback;
+  const found = allowed.find((a) => a === raw);
+  if (!found) throw new Error(`Invalid configuration: "${name}" must be one of ${allowed.join(", ")}`);
+  return found;
+}
+
+/** Refresh interval in whole minutes, clamped to 1-60. */
+export function clampRefreshMinutes(raw: unknown): number {
+  if (raw === undefined) return DEFAULT_REFRESH_MINUTES;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) {
+    throw new Error('Invalid configuration: "refresh_minutes" must be a number');
+  }
+  return Math.min(MAX_REFRESH_MINUTES, Math.max(MIN_REFRESH_MINUTES, Math.round(raw)));
+}
+
+/** Validate the config of `custom:sunspots-shadow-card`. */
+export function parseShadowConfig(raw: unknown): ShadowCardConfig {
+  if (!isRecord(raw)) throw new Error("Invalid configuration: expected an object");
+
+  const { entity, entities } = raw;
+  let first: unknown = entity;
+  if (first === undefined) {
+    if (entities !== undefined && !Array.isArray(entities)) {
+      throw new Error('Invalid configuration: "entities" must be a list of entity ids');
+    }
+    first = (entities as unknown[] | undefined)?.[0];
+  }
+  if (first === undefined) throw new Error('Invalid configuration: "entity" is required');
+
+  const title = raw["title"];
+  if (title !== undefined && typeof title !== "string") {
+    throw new Error('Invalid configuration: "title" must be a string');
+  }
+  const showSlider = raw["show_slider"];
+  if (showSlider !== undefined && typeof showSlider !== "boolean") {
+    throw new Error('Invalid configuration: "show_slider" must be true or false');
+  }
+
+  const startHour = fixedHour(raw["start_hour"], "start_hour", MAP_HOURS[0]);
+  const endHour = fixedHour(raw["end_hour"], "end_hour", MAP_HOURS[1]);
   if (startHour >= endHour) {
     throw new Error('Invalid configuration: "start_hour" must be smaller than "end_hour"');
   }
 
-  const type = typeof raw["type"] === "string" ? raw["type"] : "custom:sunspots-card";
-  return { type, mode, entities: ids, ...(title !== undefined ? { title } : {}), startHour, endHour };
+  return {
+    type: typeof raw["type"] === "string" ? raw["type"] : "custom:sunspots-shadow-card",
+    entity: entityId(first),
+    ...(title !== undefined ? { title } : {}),
+    theme: choice(raw["theme"], THEMES, "auto", "theme"),
+    refreshMinutes: clampRefreshMinutes(raw["refresh_minutes"]),
+    showSlider: showSlider === true,
+    startHour,
+    endHour,
+  };
 }

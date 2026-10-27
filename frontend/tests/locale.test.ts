@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBoundary, formatClock, formatWhen } from "../src/format";
+import { formatBoundary, formatClock, formatHourLabel, formatWhen } from "../src/format";
 import { DICTIONARIES, normalizeLanguage, translate } from "../src/locale";
 import { dayStartWall, nowMinutes, toWallMinutes, wallMinutesToIso } from "../src/time";
 import { NOW, TZ } from "./fixtures";
@@ -57,5 +57,11 @@ describe("text formatting", () => {
   it("marks times on the next day", () => {
     expect(formatWhen(1440 + 7 * 60, "en-GB")).toBe("tomorrow 07:00");
     expect(formatClock(1440 + 7 * 60, "en-GB")).toBe("07:00");
+  });
+
+  it("formats hour labels in 24 h or 12 h per locale", () => {
+    expect(formatHourLabel(14 * 60, "en-GB")).toBe("14");
+    expect(formatHourLabel(14 * 60, "en-US")).toBe("2 PM");
+    expect(formatHourLabel(1440, "en-GB")).toBe("00");
   });
 });

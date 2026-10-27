@@ -11,7 +11,7 @@ const LIMIT_BYTES = 100 * 1024;
 mkdirSync(dirname(outfile), { recursive: true });
 
 await build({
-  entryPoints: [resolve(here, "src/sunspots-card.ts")],
+  entryPoints: [resolve(here, "src/index.ts")],
   outfile,
   bundle: true,
   format: "esm",

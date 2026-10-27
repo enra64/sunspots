@@ -99,6 +99,12 @@
         "sunny": "In the sun",
         "shaded": "In the shade"
       }
+    },
+    "theme": {
+      "options": {
+        "light": "Light",
+        "dark": "Dark"
+      }
     }
   },
   "config_subentries": {
@@ -237,6 +243,9 @@
           "partly_later": "Partly sunny later",
           "no_sun_today": "No sun today"
         }
+      },
+      "sun_tomorrow": {
+        "name": "Sun tomorrow"
       }
     },
     "image": {
@@ -326,6 +335,10 @@
         "time": {
           "name": "Time",
           "description": "Local time to draw; defaults to now."
+        },
+        "theme": {
+          "name": "Theme",
+          "description": "Colours of the picture: light or dark."
         }
       }
     }

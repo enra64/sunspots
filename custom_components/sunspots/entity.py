@@ -101,11 +101,13 @@ class SpotServicesMixin:
             response["next_change"] = _local_iso(change) if change else None
         return response
 
-    async def async_render_shadow_map(self, time: datetime | None = None) -> ServiceResponse:
+    async def async_render_shadow_map(
+        self, time: datetime | None = None, theme: str = "light"
+    ) -> ServiceResponse:
         when = time or dt_util.utcnow()
         if when.tzinfo is None:  # the card sends local wall-clock times without an offset
             when = when.replace(tzinfo=dt_util.get_default_time_zone())
-        result = await self.coordinator.async_render_map(when)
+        result = await self.coordinator.async_render_map(when, theme)
         return {
             "svg": result.svg,
             "time": _local_iso(result.time),

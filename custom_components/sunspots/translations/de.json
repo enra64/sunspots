@@ -99,6 +99,12 @@
         "sunny": "In der Sonne",
         "shaded": "Im Schatten"
       }
+    },
+    "theme": {
+      "options": {
+        "light": "Hell",
+        "dark": "Dunkel"
+      }
     }
   },
   "config_subentries": {
@@ -237,6 +243,9 @@
           "partly_later": "Später teils sonnig",
           "no_sun_today": "Heute keine Sonne"
         }
+      },
+      "sun_tomorrow": {
+        "name": "Sonne morgen"
       }
     },
     "image": {
@@ -326,6 +335,10 @@
         "time": {
           "name": "Zeit",
           "description": "Lokale Zeit; Standard ist jetzt."
+        },
+        "theme": {
+          "name": "Design",
+          "description": "Farben des Bildes: hell oder dunkel."
         }
       }
     }

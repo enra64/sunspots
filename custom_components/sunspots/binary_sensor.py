@@ -32,7 +32,13 @@ class SunnyBinarySensor(SpotServicesMixin, SunspotsEntity, BinarySensorEntity):
     """On while the sun is geometrically unobstructed at the spot."""
 
     _unrecorded_attributes = frozenset(
-        {"sun_azimuth", "sun_elevation", "horizon_elevation_at_sun", "intervals_today"}
+        {
+            "sun_azimuth",
+            "sun_elevation",
+            "horizon_elevation_at_sun",
+            "intervals_today",
+            "intervals_tomorrow",
+        }
     )
 
     def __init__(self, coordinator: SpotCoordinator) -> None:
@@ -57,7 +63,11 @@ class SunnyBinarySensor(SpotServicesMixin, SunspotsEntity, BinarySensorEntity):
             for a, b in data.timeline.intervals
             if b > day_start and a < day_end
         ]
+        tomorrow = self.coordinator.tomorrow
         return {
+            "intervals_tomorrow": [
+                [_local_iso(a), _local_iso(b)] for a, b in (tomorrow.intervals if tomorrow else [])
+            ],
             "sun_azimuth": round(az, 1),
             "sun_elevation": round(el, 1),
             "horizon_elevation_at_sun": round(self.coordinator.horizon_at_sun(now), 1),

@@ -94,7 +94,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     )
     register(
         SERVICE_RENDER_SHADOW_MAP,
-        {vol.Optional("time"): cv.datetime},
+        {
+            vol.Optional("time"): cv.datetime,
+            vol.Optional("theme", default="light"): vol.In(["light", "dark"]),
+        },
         "async_render_shadow_map",
         SupportsResponse.ONLY,
     )

@@ -47,14 +47,18 @@ describe("parseRenderResponse", () => {
 
 describe("websocket helpers", () => {
   it("builds the call_service message", () => {
-    expect(renderShadowMapMessage(ID, "2026-10-27T11:00:00")).toEqual({
+    expect(renderShadowMapMessage(ID, "2026-10-27T11:00:00", "dark")).toEqual({
       type: "call_service",
       domain: "sunspots",
       service: "render_shadow_map",
-      service_data: { time: "2026-10-27T11:00:00" },
+      service_data: { time: "2026-10-27T11:00:00", theme: "dark" },
       target: { entity_id: ID },
       return_response: true,
     });
+  });
+
+  it("omits the time for the current moment", () => {
+    expect(renderShadowMapMessage(ID, undefined, "light")["service_data"]).toEqual({ theme: "light" });
   });
 
   it("extracts error messages", () => {

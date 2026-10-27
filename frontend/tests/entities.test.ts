@@ -16,6 +16,12 @@ describe("findSiblings", () => {
     });
   });
 
+  it("finds the tomorrow sensor when present", () => {
+    const hass = hassWith([spot("garden", { tomorrow: { state: "unknown" } })]);
+    expect(findSiblings(hass, "binary_sensor.garden_sunny")?.sun_tomorrow).toBe("sensor.garden_sun_tomorrow");
+    expect(findSiblings(hassWith([spot("garden")]), "binary_sensor.garden_sunny")?.sun_tomorrow).toBeUndefined();
+  });
+
   it("returns undefined for unknown entities or entities without device", () => {
     const hass = hassWith([spot("garden")]);
     expect(findSiblings(hass, "binary_sensor.nope")).toBeUndefined();

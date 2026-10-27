@@ -76,3 +76,12 @@ render_shadow_map:
       required: false
       selector:
         datetime:
+    theme:
+      required: false
+      default: light
+      selector:
+        select:
+          options:
+            - light
+            - dark
+          translation_key: theme

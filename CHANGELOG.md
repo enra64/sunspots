@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 (pre-release)
+
+- `sensor.<spot>_sun_tomorrow` and `intervals_tomorrow`: when there will be sun tomorrow (cloud-aware windows as far as the forecast reaches).
+- Card: redesigned `timeline` mode (today and tomorrow, hour grid, times on the sunny segments, text summary, automatic hour range) and a new `custom:sunspots-shadow-card` (current shadow map, auto-refresh, dark mode).
+- `sunspots.render_shadow_map` has a `theme` (`light`/`dark`).
+- Manifest category and CI action versions updated; the repository now has a description and topics (HACS checks).
+
 ## 1.0.0 (publish as a GitHub *pre-release* until the human sign-off items in `docs/phase*-report.md` are done)
 
 - Hardening: scale test with 50 spots, hub reconfigure flow, icon translations, recovery log line,

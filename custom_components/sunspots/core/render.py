@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
+from dataclasses import dataclass
 from xml.sax.saxutils import escape, quoteattr
 
 from .geometry import Point, Polygon, signed_area
@@ -20,17 +21,51 @@ SHADOW_MAX_FACTOR = 2.0
 SVG_PX = 600
 _COORD_DECIMALS = 1
 
-# Neutral, mid-tone palette on a light panel; readable inside an <img> on any theme.
-_BACKGROUND = "#ece9e2"
-_SHADOW = "#1c2b3a"
-_TEXT = "#33414f"
-_SUN = "#d99a00"
-_BUILDING_COLOURS = {
-    SOURCE_OVERRIDE: "#2e7d4f",  # user-set height
-    SOURCE_HEIGHT: "#44586b",  # measured height
-    SOURCE_FLOORS: "#6c8197",  # from floor count
-    SOURCE_CLASS: "#9aa9b8",  # guessed from building type (hatched)
-    SOURCE_DEFAULT: "#b9c3cd",  # global default (hatched)
+
+@dataclass(frozen=True, slots=True)
+class Palette:
+    """Colours of one theme; the SVG carries its own background so it works inside an <img>."""
+
+    background: str
+    shadow: str
+    shadow_opacity: float
+    text: str
+    sun: str
+    hatch: str
+    buildings: dict[str, str]
+
+
+PALETTES = {
+    "light": Palette(
+        background="#ece9e2",
+        shadow="#1c2b3a",
+        shadow_opacity=0.38,
+        text="#33414f",
+        sun="#d99a00",
+        hatch="#ffffff",
+        buildings={
+            SOURCE_OVERRIDE: "#2e7d4f",  # user-set height
+            SOURCE_HEIGHT: "#44586b",  # measured height
+            SOURCE_FLOORS: "#6c8197",  # from floor count
+            SOURCE_CLASS: "#9aa9b8",  # guessed from building type (hatched)
+            SOURCE_DEFAULT: "#b9c3cd",  # global default (hatched)
+        },
+    ),
+    "dark": Palette(
+        background="#171d24",
+        shadow="#000000",
+        shadow_opacity=0.55,
+        text="#c9d3dd",
+        sun="#f2b632",
+        hatch="#171d24",
+        buildings={
+            SOURCE_OVERRIDE: "#4caf78",
+            SOURCE_HEIGHT: "#8aa0b6",
+            SOURCE_FLOORS: "#6f879e",
+            SOURCE_CLASS: "#4f6275",
+            SOURCE_DEFAULT: "#3a4857",
+        },
+    ),
 }
 _GUESSED = (SOURCE_CLASS, SOURCE_DEFAULT)
 _SCALE_STEPS = (5, 10, 20, 25, 50, 100, 200)
@@ -116,27 +151,29 @@ def to_svg(
     caption: str,
     attribution: str,
     title: str,
+    theme: str = "light",
 ) -> str:
     """Build the SVG string; every text value is escaped and no scripting content is emitted.
 
     North is up (y is flipped explicitly). Buildings are coloured by height source; guessed
     heights additionally carry a hatch pattern so the distinction survives without colour vision.
     """
+    palette = PALETTES.get(theme, PALETTES["light"])
     scale = SVG_PX / (2 * radius)
     centre = SVG_PX / 2
     out: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {SVG_PX} {SVG_PX}" '
         f'width="{SVG_PX}" height="{SVG_PX}" role="img" aria-label={quoteattr(title)}>',
         f"<title>{escape(title)}</title>",
-        '<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" '
-        'patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#ffffff" '
+        f'<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" '
+        f'patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="{palette.hatch}" '
         'stroke-width="2" stroke-opacity="0.75"/></pattern></defs>',
-        f'<rect width="{SVG_PX}" height="{SVG_PX}" fill="{_BACKGROUND}"/>',
+        f'<rect width="{SVG_PX}" height="{SVG_PX}" fill="{palette.background}"/>',
     ]
     shadow_d = _path(shadows, radius, scale)
     if shadow_d:
         out.append(
-            f'<path d="{shadow_d}" fill="{_SHADOW}" fill-opacity="0.38" fill-rule="nonzero"/>'
+            f'<path d="{shadow_d}" fill="{palette.shadow}" fill-opacity="{palette.shadow_opacity}" fill-rule="nonzero"/>'
         )
     by_source: dict[str, list[Polygon]] = {}
     for building, source in zip(buildings, sources, strict=True):
@@ -145,7 +182,7 @@ def to_svg(
         d = _path(by_source.get(source, []), radius, scale)
         if not d:
             continue
-        colour = _BUILDING_COLOURS[source]
+        colour = palette.buildings[source]
         out.append(f'<path d="{d}" fill="{colour}" fill-rule="evenodd"/>')
         if source in _GUESSED:
             out.append(f'<path d="{d}" fill="url(#hatch)" fill-rule="evenodd"/>')
@@ -159,12 +196,12 @@ def to_svg(
         tip = (centre + math.sin(az) * 0.42 * SVG_PX, centre - math.cos(az) * 0.42 * SVG_PX)
         out.append(
             f'<line x1="{centre}" y1="{centre}" x2="{tip[0]:.1f}" y2="{tip[1]:.1f}" '
-            f'stroke="{_SUN}" stroke-width="2" stroke-dasharray="6 4"/>'
-            f'<circle cx="{tip[0]:.1f}" cy="{tip[1]:.1f}" r="9" fill="{_SUN}"/>'
+            f'stroke="{palette.sun}" stroke-width="2" stroke-dasharray="6 4"/>'
+            f'<circle cx="{tip[0]:.1f}" cy="{tip[1]:.1f}" r="9" fill="{palette.sun}"/>'
         )
     # north arrow
     out.append(
-        f'<g fill="{_TEXT}"><path d="M30,48 L22,68 L30,62 L38,68 Z"/>'
+        f'<g fill="{palette.text}"><path d="M30,48 L22,68 L30,62 L38,68 Z"/>'
         '<text x="30" y="38" text-anchor="middle" font-family="sans-serif" font-size="16" '
         'font-weight="bold">N</text></g>'
     )
@@ -172,12 +209,12 @@ def to_svg(
     bar = max((s for s in _SCALE_STEPS if s <= radius / 2), default=_SCALE_STEPS[0])
     bar_px = bar * scale
     out.append(
-        f'<g fill="{_TEXT}" font-family="sans-serif" font-size="13">'
+        f'<g fill="{palette.text}" font-family="sans-serif" font-size="13">'
         f'<rect x="16" y="{SVG_PX - 44}" width="{bar_px:.1f}" height="5"/>'
         f'<text x="16" y="{SVG_PX - 50}">{bar} m</text></g>'
     )
     out.append(
-        f'<g fill="{_TEXT}" font-family="sans-serif">'
+        f'<g fill="{palette.text}" font-family="sans-serif">'
         f'<text x="16" y="{SVG_PX - 20}" font-size="15">{escape(caption)}</text>'
         f'<text x="{SVG_PX - 12}" y="{SVG_PX - 8}" font-size="10" text-anchor="end">{escape(attribution)}</text></g>'
     )

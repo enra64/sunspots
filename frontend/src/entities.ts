@@ -7,6 +7,7 @@ export const SIBLING_KEYS = [
   "sun_remaining",
   "sun_hours_today",
   "sun_forecast",
+  "sun_tomorrow",
 ] as const;
 
 export type SiblingKey = (typeof SIBLING_KEYS)[number];
