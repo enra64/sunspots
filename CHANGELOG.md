@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 (pre-release)
+
+- Cards: the map and shadow cards no longer use a fixed grid height, so the picture is not cut off or overlapping the next card in the sections layout.
+
 ## 1.1.0 (pre-release)
 
 - `sensor.<spot>_sun_tomorrow` and `intervals_tomorrow`: when there will be sun tomorrow (cloud-aware windows as far as the forecast reaches).

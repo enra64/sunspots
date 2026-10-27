@@ -70,8 +70,7 @@ class SunspotsCard extends LitElement {
   }
 
   getGridOptions(): Record<string, unknown> {
-    const mode = this._config?.mode ?? "overview";
-    return { columns: 12, min_columns: 6, rows: mode === "map" ? 6 : "auto", min_rows: 1 };
+    return { columns: 12, min_columns: 6, rows: "auto" };
   }
 
   override disconnectedCallback(): void {

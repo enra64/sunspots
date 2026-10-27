@@ -61,7 +61,8 @@ class SunspotsShadowCard extends LitElement {
   }
 
   getGridOptions(): Record<string, unknown> {
-    return { columns: 12, min_columns: 6, rows: this._config?.showSlider ? 6 : 5, min_rows: 2 };
+    // "auto": the picture is square and as tall as the card is wide, so a fixed row count would clip it
+    return { columns: 12, min_columns: 6, rows: "auto" };
   }
 
   override connectedCallback(): void {
