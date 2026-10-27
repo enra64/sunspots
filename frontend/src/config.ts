@@ -1,9 +1,8 @@
-import type { CardConfig, CardMode, DayOption, HourSetting, ShadowCardConfig, ThemeOption } from "./types";
+import type { CardConfig, CardMode, HourSetting, ShadowCardConfig, ThemeOption } from "./types";
 
 const MODES: readonly CardMode[] = ["overview", "timeline", "map"];
 const ENTITY_ID = /^binary_sensor\.[a-z0-9_]+$/;
 
-const DAYS: readonly DayOption[] = ["today", "tomorrow", "both"];
 const THEMES: readonly ThemeOption[] = ["auto", "light", "dark"];
 
 export const DEFAULT_REFRESH_MINUTES = 5;
@@ -91,10 +90,21 @@ export function parseConfig(raw: unknown): CardConfig {
     throw new Error('Invalid configuration: "start_hour" must be smaller than "end_hour"');
   }
 
-  const day = choice(raw["day"], DAYS, "both", "day");
+  const showToday = flag(raw["show_today"], "show_today", true);
+  const showTomorrow = flag(raw["show_tomorrow"], "show_tomorrow", true);
+  if (mode === "timeline" && !showToday && !showTomorrow) {
+    throw new Error('Invalid configuration: "show_today" and "show_tomorrow" cannot both be false, show at least one day');
+  }
+  const fullDay = flag(raw["full_day"], "full_day", false);
 
   const type = typeof raw["type"] === "string" ? raw["type"] : "custom:sunspots-card";
-  return { type, mode, entities: ids, ...(title !== undefined ? { title } : {}), startHour, endHour, day };
+  return { type, mode, entities: ids, ...(title !== undefined ? { title } : {}), startHour, endHour, showToday, showTomorrow, fullDay };
+}
+
+function flag(raw: unknown, name: string, fallback: boolean): boolean {
+  if (raw === undefined) return fallback;
+  if (typeof raw !== "boolean") throw new Error(`Invalid configuration: "${name}" must be true or false`);
+  return raw;
 }
 
 function choice<T extends string>(raw: unknown, allowed: readonly T[], fallback: T, name: string): T {
@@ -131,10 +141,7 @@ export function parseShadowConfig(raw: unknown): ShadowCardConfig {
   if (title !== undefined && typeof title !== "string") {
     throw new Error('Invalid configuration: "title" must be a string');
   }
-  const showSlider = raw["show_slider"];
-  if (showSlider !== undefined && typeof showSlider !== "boolean") {
-    throw new Error('Invalid configuration: "show_slider" must be true or false');
-  }
+  const showSlider = flag(raw["show_slider"], "show_slider", false);
 
   const startHour = fixedHour(raw["start_hour"], "start_hour", MAP_HOURS[0]);
   const endHour = fixedHour(raw["end_hour"], "end_hour", MAP_HOURS[1]);
@@ -148,7 +155,7 @@ export function parseShadowConfig(raw: unknown): ShadowCardConfig {
     ...(title !== undefined ? { title } : {}),
     theme: choice(raw["theme"], THEMES, "auto", "theme"),
     refreshMinutes: clampRefreshMinutes(raw["refresh_minutes"]),
-    showSlider: showSlider === true,
+    showSlider,
     startHour,
     endHour,
   };

@@ -26,7 +26,6 @@ export interface Hass {
 }
 
 export type CardMode = "overview" | "timeline" | "map";
-export type DayOption = "today" | "tomorrow" | "both";
 export type ThemeOption = "auto" | "light" | "dark";
 export type Theme = "light" | "dark";
 /** An hour of day, or "auto" to derive it from the sun intervals (timeline only). */
@@ -39,7 +38,11 @@ export interface CardConfig {
   title?: string;
   startHour: HourSetting;
   endHour: HourSetting;
-  day: DayOption;
+  /** Timeline only: which days are drawn (at least one). */
+  showToday: boolean;
+  showTomorrow: boolean;
+  /** Timeline only: always show 0-24 h, ignoring the hour settings. */
+  fullDay: boolean;
 }
 
 export interface ShadowCardConfig {

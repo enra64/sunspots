@@ -15,7 +15,9 @@ of one spot. TypeScript + Lit, bundled by esbuild into one ES module with both c
 | `entities` | list | | `binary_sensor.<spot>_sunny` entities |
 | `entity` | string | | Single entity (alternative to `entities`, not both) |
 | `title` | string | `Sunspots` | Card header |
-| `day` | `today` \| `tomorrow` \| `both` | `both` | Days shown (timeline only) |
+| `show_today` | boolean | `true` | Draw today (timeline only) |
+| `show_tomorrow` | boolean | `true` | Draw tomorrow (timeline only); at least one of the two must be on, otherwise the card reports a configuration error |
+| `full_day` | boolean | `false` | Timeline only: always show 0-24 h, ignoring `start_hour`, `end_hour` and `auto` |
 | `start_hour` | 0-24 \| `auto` | timeline: `auto`, map: 4 | First hour shown (timeline, map slider) |
 | `end_hour` | 0-24 \| `auto` | timeline: `auto`, map: 23 | Last hour shown; must be greater than `start_hour` |
 
@@ -40,11 +42,14 @@ entities:
 ### Timeline
 
 Per spot a header (name and the current state chip, as in the overview) and one 28 px bar per
-day with a day label ("Today"/"Tomorrow"). Each bar has hour grid lines, hour labels every
-2 hours (24 h or 12 h by locale), a prominent "Now" marker on today's bar and the time range
+day with a day label ("Today"/"Tomorrow"). Each bar has hour grid lines, hour labels (24 h or 12 h by locale), a prominent "Now" marker on today's bar and the time range
 printed inside sunny segments that are at least 90 minutes and 18 % of the bar wide. A one-line
 summary under each bar lists all ranges and the total ("Sun: 11:00-13:30, 15:00-17:20 · 5.9 h",
 "No direct sun"); tomorrow's adds "first sun 09:40" when `sun_tomorrow` has a state.
+
+The label spacing depends on the visible window so labels stay readable on a narrow card
+(about 350 px): every 2 hours up to a 12 h window, every 3 hours up to 18 h and every 4 hours
+beyond (so `full_day: true` labels 00, 04, ..., 20, 00). Hour grid lines are always drawn.
 
 Forecast classes (sunny solid, partly sunny hatched, sun unlikely light with dotted edges) are
 used for a day when its forecast sensor has windows (today: `sun_forecast`, tomorrow:
@@ -54,7 +59,6 @@ forecast" legend. Each bar has an `aria-label` listing its intervals.
 ```yaml
 type: custom:sunspots-card
 mode: timeline
-day: both          # today | tomorrow | both
 entities:
   - binary_sensor.garden_sunny
 ```
@@ -62,10 +66,19 @@ entities:
 ```yaml
 type: custom:sunspots-card
 mode: timeline
-day: tomorrow
+show_today: false  # tomorrow only
 start_hour: 7      # numbers override "auto"
 end_hour: auto
 entity: binary_sensor.garden_sunny
+```
+
+```yaml
+type: custom:sunspots-card
+mode: timeline
+show_tomorrow: false   # today only
+full_day: true         # 0-24 h, start_hour/end_hour are ignored
+entities:
+  - binary_sensor.garden_sunny
 ```
 
 ### Map
@@ -118,6 +131,28 @@ theme: auto
 refresh_minutes: 10
 show_slider: true
 ```
+
+## Visual editors
+
+Both cards provide a visual editor (`getConfigElement()`), so they can be configured in the
+Lovelace UI without YAML: `sunspots-card-editor` and `sunspots-shadow-card-editor`. They are
+built on Home Assistant's `ha-form` (provided by Home Assistant at runtime) with entity pickers
+limited to the Sunspots `binary_sensor` entities, and labels and helper texts in English and German
+(`src/locale.ts`, keys `editor_*`).
+
+- `sunspots-card`: `mode`, `entities`, `title`. Timeline adds `show_today`, `show_tomorrow`,
+  `full_day` and the optional number fields `start_hour` / `end_hour` (empty = automatic; hidden
+  while `full_day` is on). Map adds `start_hour` / `end_hour`.
+- `sunspots-shadow-card`: `entity`, `title`, `theme`, `refresh_minutes`, `show_slider`; the slider
+  range `start_hour` / `end_hour` appears only while `show_slider` is on.
+
+The editors keep the YAML tidy: defaults and empty values are removed (`mode: overview`, `true` for
+`show_today`/`show_tomorrow`, `false` for `full_day`/`show_slider`, `theme: auto`, 5 minutes,
+default hours), `type` stays, a single `entity` of the overview card becomes `entities`, hours are
+rounded to 0-24, and keys the editor does not know (for example `grid_options`, `visibility`) are
+never removed. Values hidden by a toggle are kept. Pure logic lives in `src/editor-schema.ts`
+(schema, labels) and `src/editor-config.ts` (normalisation, `config-changed` event); the Lit
+element `src/editor-element.ts` only wires `ha-form` to them.
 
 ## Build and test
 

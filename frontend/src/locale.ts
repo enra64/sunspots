@@ -41,6 +41,31 @@ export interface Strings {
   card_description: string;
   shadow_card_name: string;
   shadow_card_description: string;
+  editor_mode: string;
+  editor_mode_overview: string;
+  editor_mode_timeline: string;
+  editor_mode_map: string;
+  editor_entities: string;
+  editor_entities_helper: string;
+  editor_entity: string;
+  editor_entity_helper: string;
+  editor_title: string;
+  editor_show_today: string;
+  editor_show_tomorrow: string;
+  editor_full_day: string;
+  editor_full_day_helper: string;
+  editor_start_hour: string;
+  editor_end_hour: string;
+  editor_hours_helper_timeline: string;
+  editor_hours_helper_slider: string;
+  editor_theme: string;
+  editor_theme_helper: string;
+  editor_theme_auto: string;
+  editor_theme_light: string;
+  editor_theme_dark: string;
+  editor_refresh_minutes: string;
+  editor_refresh_minutes_helper: string;
+  editor_show_slider: string;
 }
 
 export type StringKey = keyof Strings;
@@ -90,6 +115,31 @@ const en: Strings = {
   card_description: "Sun and shade status, timeline and shadow map for your spots",
   shadow_card_name: "Sunspots shadow map",
   shadow_card_description: "Current shadow map of one spot, refreshed automatically, with dark mode",
+  editor_mode: "Card view",
+  editor_mode_overview: "Overview",
+  editor_mode_timeline: "Timeline",
+  editor_mode_map: "Shadow map",
+  editor_entities: "Spots",
+  editor_entities_helper: "Sunny sensors (binary_sensor.<spot>_sunny) of the Sunspots integration",
+  editor_entity: "Spot",
+  editor_entity_helper: "The spot's sunny sensor (binary_sensor.<spot>_sunny)",
+  editor_title: "Title",
+  editor_show_today: "Show today",
+  editor_show_tomorrow: "Show tomorrow",
+  editor_full_day: "Full day (0-24 h)",
+  editor_full_day_helper: "Always shows the whole day, ignoring start and end hour",
+  editor_start_hour: "Start hour",
+  editor_end_hour: "End hour",
+  editor_hours_helper_timeline: "Hour 0-24; empty means automatic",
+  editor_hours_helper_slider: "Hour 0-24 for the time slider range",
+  editor_theme: "Theme of the map",
+  editor_theme_helper: "Automatic follows the Home Assistant dark mode",
+  editor_theme_auto: "Automatic",
+  editor_theme_light: "Light",
+  editor_theme_dark: "Dark",
+  editor_refresh_minutes: "Refresh interval (minutes)",
+  editor_refresh_minutes_helper: "1 to 60 minutes",
+  editor_show_slider: "Show time slider",
 };
 
 const de: Strings = {
@@ -135,6 +185,31 @@ const de: Strings = {
   card_description: "Sonnen- und Schattenstatus, Zeitleiste und Schattenkarte für deine Orte",
   shadow_card_name: "Sunspots Schattenkarte",
   shadow_card_description: "Aktuelle Schattenkarte eines Ortes, automatisch aktualisiert, mit Dunkelmodus",
+  editor_mode: "Ansicht",
+  editor_mode_overview: "Übersicht",
+  editor_mode_timeline: "Zeitleiste",
+  editor_mode_map: "Schattenkarte",
+  editor_entities: "Orte",
+  editor_entities_helper: "Sonnig-Sensoren (binary_sensor.<ort>_sunny) der Sunspots-Integration",
+  editor_entity: "Ort",
+  editor_entity_helper: "Der Sonnig-Sensor des Ortes (binary_sensor.<ort>_sunny)",
+  editor_title: "Titel",
+  editor_show_today: "Heute anzeigen",
+  editor_show_tomorrow: "Morgen anzeigen",
+  editor_full_day: "Ganzer Tag (0-24 Uhr)",
+  editor_full_day_helper: "Zeigt immer den ganzen Tag, Start- und Endstunde werden ignoriert",
+  editor_start_hour: "Startstunde",
+  editor_end_hour: "Endstunde",
+  editor_hours_helper_timeline: "Stunde 0-24; leer bedeutet automatisch",
+  editor_hours_helper_slider: "Stunde 0-24 für den Bereich des Zeitreglers",
+  editor_theme: "Darstellung der Karte",
+  editor_theme_helper: "Automatisch folgt dem Dunkelmodus von Home Assistant",
+  editor_theme_auto: "Automatisch",
+  editor_theme_light: "Hell",
+  editor_theme_dark: "Dunkel",
+  editor_refresh_minutes: "Aktualisierung (Minuten)",
+  editor_refresh_minutes_helper: "1 bis 60 Minuten",
+  editor_show_slider: "Zeitregler anzeigen",
 };
 
 export const DICTIONARIES: Dictionaries = { en, de };

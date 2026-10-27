@@ -1,6 +1,7 @@
 import { css, html, LitElement, nothing, type TemplateResult } from "lit";
 import { debounce, type Debounced } from "./async";
 import { parseShadowConfig } from "./config";
+import "./shadow-card-editor";
 import { pickStubEntity } from "./entities";
 import { translate } from "./locale";
 import { MapLoader, type MapState } from "./maploader";
@@ -45,6 +46,10 @@ class SunspotsShadowCard extends LitElement {
 
   static getStubConfig(hass: Hass, entities: string[]): Record<string, unknown> {
     return { type: "custom:sunspots-shadow-card", entity: pickStubEntity(hass, entities) ?? "" };
+  }
+
+  static getConfigElement(): HTMLElement {
+    return document.createElement("sunspots-shadow-card-editor");
   }
 
   setConfig(config: unknown): void {

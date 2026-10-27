@@ -1,5 +1,5 @@
 import { clipAndMerge, type Range } from "./intervals";
-import type { DayOption, HourSetting } from "./types";
+import type { HourSetting } from "./types";
 
 export type DayKey = "today" | "tomorrow";
 
@@ -11,10 +11,21 @@ export const FALLBACK_HOURS: readonly [number, number] = [6, 22];
 /** Start of each day on the card's axis (minutes since local midnight today). */
 export const DAY_OFFSET: Record<DayKey, number> = { today: 0, tomorrow: MINUTES_PER_DAY };
 
-export function selectDays(option: DayOption): readonly DayKey[] {
-  if (option === "today") return ["today"];
-  if (option === "tomorrow") return ["tomorrow"];
-  return ["today", "tomorrow"];
+export function selectDays(showToday: boolean, showTomorrow: boolean): readonly DayKey[] {
+  const days: DayKey[] = [];
+  if (showToday) days.push("today");
+  if (showTomorrow) days.push("tomorrow");
+  return days;
+}
+
+/**
+ * Distance between labelled axis ticks for a visible window of `spanMinutes`:
+ * 2 h up to 12 h, 3 h up to 18 h, 4 h beyond, so labels never collide on a narrow card.
+ */
+export function tickStepMinutes(spanMinutes: number): number {
+  if (spanMinutes <= 12 * 60) return 120;
+  if (spanMinutes <= 18 * 60) return 180;
+  return 240;
 }
 
 export function shiftRanges(ranges: readonly Range[], offset: number): Range[] {

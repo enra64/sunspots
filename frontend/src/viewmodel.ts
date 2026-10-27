@@ -1,5 +1,5 @@
 import { attrNumber, attrString, findSiblings, isUnavailable, type Siblings } from "./entities";
-import { DAY_OFFSET, type DayKey, resolveHourWindow, selectDays, shiftRanges } from "./days";
+import { DAY_OFFSET, type DayKey, resolveHourWindow, selectDays, shiftRanges, tickStepMinutes } from "./days";
 import { MAP_HOURS } from "./config";
 import { formatBoundary, formatHourLabel, formatNumber } from "./format";
 import { computeTimeline, type ForecastWindow, type Range } from "./intervals";
@@ -9,6 +9,8 @@ import { dayStartWall, nowMinutes, toWallMinutes } from "./time";
 import type { CardConfig, ForecastClass, Hass, HassEntityState, HourSetting, ShadowCardConfig } from "./types";
 
 export const MAP_STEP_MINUTES = 10;
+
+const FULL_DAY_HOURS: readonly [number, number] = [0, 24];
 
 export type Status = "sunny" | "shaded" | "sunny_cloudy" | "unavailable";
 
@@ -38,7 +40,7 @@ export interface LegendItem {
 
 export interface TimelineTick {
   percent: number;
-  /** Only every second hour is labelled; the others are plain grid lines. */
+  /** Only every n-th hour (see `tickStepMinutes`) is labelled; the others are plain grid lines. */
   label?: string;
 }
 
@@ -229,12 +231,13 @@ function overviewRow(ctx: Context, siblings: Siblings, entityId: string): Overvi
   return row;
 }
 
-/** Grid line per full hour inside the window; every second hour carries a label. */
+/** Grid line per full hour inside the window; hours on the tick step carry a label. */
 function ticks(ctx: Context, startMin: number, endMin: number): TimelineTick[] {
   const result: TimelineTick[] = [];
+  const step = tickStepMinutes(endMin - startMin);
   for (let m = Math.ceil(startMin / 60) * 60; m <= endMin; m += 60) {
     const percent = ((m - startMin) / (endMin - startMin)) * 100;
-    result.push(m % 120 === 0 ? { percent, label: formatHourLabel(m, ctx.language) } : { percent });
+    result.push(m % step === 0 ? { percent, label: formatHourLabel(m, ctx.language) } : { percent });
   }
   return result;
 }
@@ -326,13 +329,15 @@ function timelineDay(
 function timelineRow(ctx: Context, siblings: Siblings, entityId: string, config: CardConfig): TimelineRow {
   const main = ctx.hass.states[entityId];
   const name = spotName(main, entityId);
-  const days = selectDays(config.day).map((key) => ({ key, data: dayData(ctx, siblings, main, key) }));
+  const days = selectDays(config.showToday, config.showTomorrow).map((key) => ({ key, data: dayData(ctx, siblings, main, key) }));
 
   const visible = days.flatMap(({ data }) => [
     ...data.geometry,
     ...data.windows.map((w): Range => [w.start, w.end]),
   ]);
-  const [startHour, endHour] = resolveHourWindow(config.startHour, config.endHour, visible);
+  const [startHour, endHour] = config.fullDay
+    ? FULL_DAY_HOURS
+    : resolveHourWindow(config.startHour, config.endHour, visible);
   const windowStart = startHour * 60;
   const windowEnd = endHour * 60;
 

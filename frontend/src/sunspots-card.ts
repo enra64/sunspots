@@ -1,5 +1,6 @@
 import { css, html, LitElement, nothing, type TemplateResult } from "lit";
 import { debounce, type Debounced } from "./async";
+import "./card-editor";
 import { parseConfig } from "./config";
 import { selectDays } from "./days";
 import { pickStubEntity } from "./entities";
@@ -56,6 +57,10 @@ class SunspotsCard extends LitElement {
     return { type: "custom:sunspots-card", mode: "overview", entities: entity ? [entity] : [] };
   }
 
+  static getConfigElement(): HTMLElement {
+    return document.createElement("sunspots-card-editor");
+  }
+
   setConfig(config: unknown): void {
     this._config = parseConfig(config);
     this.resetMap();
@@ -65,7 +70,7 @@ class SunspotsCard extends LitElement {
     const config = this._config;
     if (!config) return 1;
     if (config.mode === "map") return 8;
-    if (config.mode === "timeline") return 1 + config.entities.length * (1 + selectDays(config.day).length * 2);
+    if (config.mode === "timeline") return 1 + config.entities.length * (1 + selectDays(config.showToday, config.showTomorrow).length * 2);
     return 1 + config.entities.length;
   }
 

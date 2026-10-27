@@ -103,13 +103,37 @@ describe("timeline view-model", () => {
 
   it("selects the day and honours numeric hours", () => {
     const hass = hassWith([spot("garden", { intervals: today, intervalsTomorrow: tomorrow })]);
-    const only = timeline(hass, { day: "tomorrow", start_hour: 6, end_hour: 22 });
+    const only = timeline(hass, { show_today: false, start_hour: 6, end_hour: 22 });
     expect(only.days.map((d) => d.key)).toEqual(["tomorrow"]);
     expect(only.days[0]?.nowPercent).toBeUndefined();
     expect(only.days[0]?.bars[0]?.left).toBeCloseTo(((9 * 60 + 40 - 360) / 960) * 100);
     // 2h20 of a 16h bar is 14.6 %: too narrow for an inside label, still in the text summary
     expect(only.days[0]?.bars[0]?.label).toBeUndefined();
     expect(only.days[0]?.summary).toContain("09:40–12:00");
+  });
+
+  it("shows only today, with day label, summary and legend, when show_tomorrow is off", () => {
+    const hass = hassWith([spot("garden", { intervals: today, intervalsTomorrow: tomorrow })]);
+    const row = timeline(hass, { show_tomorrow: false });
+    expect(row.days.map((d) => d.label)).toEqual(["Today"]);
+    expect(row.days[0]?.summary).toBe("Sun: 11:00–13:30, 15:00–17:20 · 4.8 h");
+    expect(row.days[0]?.nowPercent).toBeDefined();
+    expect(row.legend.map((l) => l.kind)).toEqual(["geometry"]);
+  });
+
+  it("ignores hours and auto with full_day and spaces labels 4 h apart", () => {
+    const hass = hassWith([spot("garden", { intervals: today, intervalsTomorrow: tomorrow })]);
+    const row = timeline(hass, { full_day: true, start_hour: 8, end_hour: 12 });
+    expect(row.ticks).toHaveLength(25);
+    expect(row.ticks.filter((t) => t.label).map((t) => t.label)).toEqual(["00", "04", "08", "12", "16", "20", "00"]);
+    expect(row.ticks.at(-1)?.percent).toBe(100);
+    expect(row.days[0]?.bars[0]?.left).toBeCloseTo((11 / 24) * 100);
+    expect(row.days[0]?.nowPercent).toBeCloseTo((11 / 24) * 100);
+  });
+
+  it("labels every third hour for windows between 12 and 18 hours", () => {
+    const row = timeline(hassWith([spot("garden")]));
+    expect(row.ticks.filter((t) => t.label).map((t) => t.label)).toEqual(["06", "09", "12", "15", "18", "21"]);
   });
 
   it("falls back to 6-22 and 'No direct sun' when there is no sun", () => {
@@ -163,20 +187,20 @@ describe("timeline view-model", () => {
         },
       }),
     ]);
-    expect(timeline(hass, { day: "today" }).days[0]?.summary).toBe("Partly sunny: 11:00–13:00 · 2 h");
+    expect(timeline(hass, { show_tomorrow: false }).days[0]?.summary).toBe("Partly sunny: 11:00–13:00 · 2 h");
   });
 
   it("copes with missing sibling entities and an unknown sun_tomorrow", () => {
-    const missingSibling = timeline(hassWith([spot("garden", { intervalsTomorrow: tomorrow })]), { day: "tomorrow" });
+    const missingSibling = timeline(hassWith([spot("garden", { intervalsTomorrow: tomorrow })]), { show_today: false });
     expect(missingSibling.days[0]?.usesForecast).toBe(false);
     expect(missingSibling.days[0]?.summary).toBe("Sun: 09:40–12:00 · 2.3 h");
 
-    const unknown = timeline(hassWith([spot("garden", { tomorrow: { state: "unknown" } })]), { day: "tomorrow" });
+    const unknown = timeline(hassWith([spot("garden", { tomorrow: { state: "unknown" } })]), { show_today: false });
     expect(unknown.days[0]?.summary).toBe("No direct sun");
 
     const unavailable = timeline(
       hassWith([spot("garden", { intervalsTomorrow: tomorrow, tomorrow: { state: "unavailable" } })]),
-      { day: "tomorrow" },
+      { show_today: false },
     );
     expect(unavailable.days[0]?.summary).toBe("Sun: 09:40–12:00 · 2.3 h");
   });
@@ -190,7 +214,7 @@ describe("timeline view-model", () => {
         },
       }),
     ]);
-    const day = timeline(hass, { day: "tomorrow" }).days[0];
+    const day = timeline(hass, { show_today: false }).days[0];
     expect(day?.bars).toHaveLength(1);
     expect(day?.summary).toBe("Sun: 09:40–10:40 · 1 h · first sun 09:40");
   });

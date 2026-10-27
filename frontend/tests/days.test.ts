@@ -1,11 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { autoHourWindow, FALLBACK_HOURS, resolveHourWindow, selectDays, shiftRanges } from "../src/days";
+import { autoHourWindow, FALLBACK_HOURS, resolveHourWindow, selectDays, shiftRanges, tickStepMinutes } from "../src/days";
 
 describe("selectDays", () => {
   it("maps the option to the shown days", () => {
-    expect(selectDays("today")).toEqual(["today"]);
-    expect(selectDays("tomorrow")).toEqual(["tomorrow"]);
-    expect(selectDays("both")).toEqual(["today", "tomorrow"]);
+    expect(selectDays(true, false)).toEqual(["today"]);
+    expect(selectDays(false, true)).toEqual(["tomorrow"]);
+    expect(selectDays(true, true)).toEqual(["today", "tomorrow"]);
+    expect(selectDays(false, false)).toEqual([]);
+  });
+});
+
+describe("tickStepMinutes", () => {
+  it("grows with the window so labels do not collide", () => {
+    expect(tickStepMinutes(60)).toBe(120);
+    expect(tickStepMinutes(12 * 60)).toBe(120);
+    expect(tickStepMinutes(13 * 60)).toBe(180);
+    expect(tickStepMinutes(18 * 60)).toBe(180);
+    expect(tickStepMinutes(19 * 60)).toBe(240);
+    expect(tickStepMinutes(24 * 60)).toBe(240);
+  });
+
+  it("keeps at least 40 px between labels on a 270 px axis for every window", () => {
+    for (let span = 1; span <= 24; span++) {
+      const labels = (span * 60) / tickStepMinutes(span * 60);
+      expect(270 / Math.max(labels, 1)).toBeGreaterThanOrEqual(40);
+    }
   });
 });
 

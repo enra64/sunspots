@@ -8,7 +8,7 @@ describe("parseConfig", () => {
     expect(c.entities).toEqual(["binary_sensor.a_sunny"]);
     expect(c.startHour).toBe(6);
     expect(c.endHour).toBe(22);
-    expect(c.day).toBe("both");
+    expect([c.showToday, c.showTomorrow, c.fullDay]).toEqual([true, true, false]);
   });
 
   it("defaults the timeline to automatic hours and accepts auto per bound", () => {
@@ -18,8 +18,23 @@ describe("parseConfig", () => {
     expect([mixed.startHour, mixed.endHour]).toEqual([8, "auto"]);
   });
 
-  it.each(["today", "tomorrow", "both"])("accepts day %s", (day) => {
-    expect(parseConfig({ mode: "timeline", entity: "binary_sensor.a_sunny", day }).day).toBe(day);
+  it.each([
+    [true, false],
+    [false, true],
+    [true, true],
+  ])("accepts show_today %s and show_tomorrow %s", (today, tomorrow) => {
+    const c = parseConfig({ mode: "timeline", entity: "binary_sensor.a_sunny", show_today: today, show_tomorrow: tomorrow });
+    expect([c.showToday, c.showTomorrow]).toEqual([today, tomorrow]);
+  });
+
+  it("accepts full_day", () => {
+    expect(parseConfig({ mode: "timeline", entity: "binary_sensor.a_sunny", full_day: true }).fullDay).toBe(true);
+  });
+
+  it("rejects a timeline without any day, with a clear message", () => {
+    expect(() =>
+      parseConfig({ mode: "timeline", entity: "binary_sensor.a_sunny", show_today: false, show_tomorrow: false }),
+    ).toThrow(/cannot both be false/);
   });
 
   it("accepts a single entity and uses map hour defaults", () => {
@@ -46,7 +61,9 @@ describe("parseConfig", () => {
     [{ entity: "binary_sensor.a_sunny", start_hour: 10, end_hour: 9 }, /smaller/],
     [{ entity: "binary_sensor.a_sunny", start_hour: 1.5 }, /start_hour/],
     [{ entity: "binary_sensor.a_sunny", end_hour: 25 }, /end_hour/],
-    [{ entity: "binary_sensor.a_sunny", day: "yesterday" }, /day/],
+    [{ mode: "timeline", entity: "binary_sensor.a_sunny", show_today: "yes" }, /show_today/],
+    [{ mode: "timeline", entity: "binary_sensor.a_sunny", show_tomorrow: 0 }, /show_tomorrow/],
+    [{ mode: "timeline", entity: "binary_sensor.a_sunny", full_day: "true" }, /full_day/],
     [{ mode: "map", entity: "binary_sensor.a_sunny", start_hour: "auto" }, /start_hour/],
     [{ mode: "timeline", entity: "binary_sensor.a_sunny", end_hour: "late" }, /end_hour/],
   ])("rejects invalid config %#", (raw, message) => {
