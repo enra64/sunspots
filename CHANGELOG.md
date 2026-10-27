@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (pre-release)
+
+- `sensor.<spot>_sun_forecast` (enum: sunny now / partly sunny / sunny later / partly sunny later / no sun today)
+  with `windows`, `best_window`, `hourly`, `forecast_available`, `forecast_resolution`, `source_entity`.
+- Weather forecast read once per weather entity for the whole hub (hourly, else daily, else geometry only;
+  refresh every 30 min and on change with 5 min debounce; last good forecast kept on failure).
+- `sunspots.get_sun_forecast` now also returns windows, hourly rows and forecast metadata.
+- Hub `sunny spots` sensor gains a `next_window` attribute across all spots.
+- New shared setting: cloud limit for "partly sunny" (default 75 %).
+- Docs: provider compatibility table, "Today" dashboard, optional morning notification automation.
+
 ## 0.1.0 (pre-release)
 
 First version: is this outdoor spot in direct sun, and when does that change?

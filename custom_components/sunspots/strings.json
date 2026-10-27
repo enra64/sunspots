@@ -12,7 +12,8 @@
           "floor_height": "Height per floor",
           "default_building_height": "Default building height",
           "cloud_threshold_sunny": "Cloud limit for \"sunny\"",
-          "weather_entity": "Weather entity"
+          "weather_entity": "Weather entity",
+          "cloud_threshold_partly": "Cloud limit for \"partly sunny\""
         },
         "data_description": {
           "data_source": "Overture Maps is the default and only reveals map tile numbers. Overpass needs the option below.",
@@ -22,12 +23,14 @@
           "floor_height": "Used when only the number of floors is known.",
           "default_building_height": "Used when a building has no height, floors or type information.",
           "cloud_threshold_sunny": "Cloud cover up to this value still counts as sunny in the weather-aware sensor.",
-          "weather_entity": "Optional default weather entity for cloud information."
+          "weather_entity": "Optional default weather entity for cloud information.",
+          "cloud_threshold_partly": "Cloud cover up to this value (and above the \"sunny\" limit) counts as partly sunny in the forecast."
         }
       }
     },
     "error": {
-      "overpass_not_allowed": "Choose Overpass as the source only if you also allow Overpass."
+      "overpass_not_allowed": "Choose Overpass as the source only if you also allow Overpass.",
+      "partly_below_sunny": "The \"partly sunny\" limit must not be below the \"sunny\" limit."
     },
     "abort": {
       "single_instance_allowed": "Sunspots is already set up. Add spots to the existing entry."
@@ -45,7 +48,8 @@
           "floor_height": "Height per floor",
           "default_building_height": "Default building height",
           "cloud_threshold_sunny": "Cloud limit for \"sunny\"",
-          "weather_entity": "Weather entity"
+          "weather_entity": "Weather entity",
+          "cloud_threshold_partly": "Cloud limit for \"partly sunny\""
         },
         "data_description": {
           "allow_overpass": "Overpass sends the spot's coordinates to a public OpenStreetMap server."
@@ -53,7 +57,8 @@
       }
     },
     "error": {
-      "overpass_not_allowed": "Choose Overpass as the source only if you also allow Overpass."
+      "overpass_not_allowed": "Choose Overpass as the source only if you also allow Overpass.",
+      "partly_below_sunny": "The \"partly sunny\" limit must not be below the \"sunny\" limit."
     }
   },
   "selector": {
@@ -197,6 +202,16 @@
       },
       "sunny_now": {
         "name": "Sunny spots"
+      },
+      "sun_forecast": {
+        "name": "Sun forecast",
+        "state": {
+          "sunny_now": "Sunny now",
+          "partly": "Partly sunny now",
+          "sunny_later": "Sunny later",
+          "partly_later": "Partly sunny later",
+          "no_sun_today": "No sun today"
+        }
       }
     }
   },
@@ -227,7 +242,7 @@
   "services": {
     "get_sun_forecast": {
       "name": "Get sun forecast",
-      "description": "Returns the sunlit intervals for a day.",
+      "description": "Returns the sunlit intervals for a day, plus class windows and hourly rows that take the weather forecast into account.",
       "fields": {
         "date": {
           "name": "Date",

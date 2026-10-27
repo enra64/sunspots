@@ -21,6 +21,7 @@ async def test_hub_flow_creates_entry_with_defaults(hass: HomeAssistant):
             "floor_height": 3.2,
             "default_building_height": 12,
             "cloud_threshold_sunny": 40,
+            "cloud_threshold_partly": 75,
             "weather_entity": "weather.home",
         },
     )
@@ -48,6 +49,7 @@ async def test_overpass_source_requires_permission(hass: HomeAssistant):
             "floor_height": 3.2,
             "default_building_height": 12,
             "cloud_threshold_sunny": 40,
+            "cloud_threshold_partly": 75,
         },
     )
     assert result["type"] is FlowResultType.FORM
@@ -69,6 +71,7 @@ async def test_options_flow_updates_and_reloads(hass: HomeAssistant, fake_fetche
             "floor_height": 3.0,
             "default_building_height": 12,
             "cloud_threshold_sunny": 40,
+            "cloud_threshold_partly": 75,
         },
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY

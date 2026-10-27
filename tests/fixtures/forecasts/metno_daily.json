@@ -1,0 +1,38 @@
+[
+ {
+  "datetime": "2026-06-21T00:00:00+00:00",
+  "condition": "sunny",
+  "temperature": 12.3,
+  "templow": 4.8,
+  "precipitation": 0.0,
+  "wind_bearing": 200,
+  "uv_index": 4
+ },
+ {
+  "datetime": "2026-06-22T00:00:00+00:00",
+  "condition": "cloudy",
+  "temperature": 12.3,
+  "templow": 4.8,
+  "precipitation": 0.0,
+  "wind_bearing": 200,
+  "uv_index": 4
+ },
+ {
+  "datetime": "2026-06-23T00:00:00+00:00",
+  "condition": "partlycloudy",
+  "temperature": 12.3,
+  "templow": 4.8,
+  "precipitation": 0.0,
+  "wind_bearing": 200,
+  "uv_index": 4
+ },
+ {
+  "datetime": "2026-06-24T00:00:00+00:00",
+  "condition": "cloudy",
+  "temperature": 12.3,
+  "templow": 4.8,
+  "precipitation": 0.0,
+  "wind_bearing": 200,
+  "uv_index": 4
+ }
+]

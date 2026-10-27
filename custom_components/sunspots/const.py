@@ -10,7 +10,7 @@ from .core.const import (
     DEFAULT_OBSERVER_HEIGHT_M,
     DEFAULT_RADIUS_M,
 )
-from .core.forecast import DEFAULT_CLOUD_THRESHOLD_SUNNY
+from .core.forecast import DEFAULT_CLOUD_THRESHOLD_PARTLY, DEFAULT_CLOUD_THRESHOLD_SUNNY
 
 DOMAIN: Final = "sunspots"
 SUBENTRY_SPOT: Final = "spot"
@@ -25,6 +25,7 @@ CONF_FLOOR_HEIGHT: Final = "floor_height"
 CONF_DEFAULT_HEIGHT: Final = "default_building_height"
 CONF_WEATHER_ENTITY: Final = "weather_entity"
 CONF_CLOUD_THRESHOLD_SUNNY: Final = "cloud_threshold_sunny"
+CONF_CLOUD_THRESHOLD_PARTLY: Final = "cloud_threshold_partly"
 
 # Spot data (in addition to the standard latitude/longitude/name keys)
 CONF_GROUND_OFFSET: Final = "ground_offset"
@@ -40,6 +41,7 @@ HUB_DEFAULTS: Final[dict[str, object]] = {
     CONF_FLOOR_HEIGHT: DEFAULT_FLOOR_HEIGHT_M,
     CONF_DEFAULT_HEIGHT: DEFAULT_BUILDING_HEIGHT_M,
     CONF_CLOUD_THRESHOLD_SUNNY: DEFAULT_CLOUD_THRESHOLD_SUNNY,
+    CONF_CLOUD_THRESHOLD_PARTLY: DEFAULT_CLOUD_THRESHOLD_PARTLY,
 }
 
 # Services

@@ -45,3 +45,31 @@ async def test_markdown_without_spots(hass, fake_fetcher):
         "No Sunspots spots set up yet."
         in Template(load_cards()["markdown"]["content"], hass).async_render()
     )
+
+
+TODAY = Path(__file__).parents[1] / "docs" / "dashboards" / "today.yaml"
+NOTIFY = Path(__file__).parents[1] / "docs" / "dashboards" / "morning-notification.yaml"
+
+
+async def test_today_view_templates_render(hass, fake_fetcher, freezer):
+    from datetime import UTC, datetime
+
+    freezer.move_to(datetime(2026, 6, 21, 7, 0, tzinfo=UTC))
+    await setup(hass, make_entry())
+    view = yaml.safe_load(TODAY.read_text())
+    assert [c["type"] for c in view["cards"]] == ["markdown", "markdown", "tile"]
+    best = Template(view["cards"][0]["content"], hass).async_render()
+    assert "**Schneiderei**: sunny" in best and "–" in best
+    hourly = Template(view["cards"][1]["content"], hass).async_render()
+    assert "**Schneiderei**" in hourly and "| 09:00 |" in hourly and "☀️" in hourly
+
+
+async def test_morning_notification_message_renders(hass, fake_fetcher, freezer):
+    from datetime import UTC, datetime
+
+    freezer.move_to(datetime(2026, 6, 21, 6, 30, tzinfo=UTC))
+    await setup(hass, make_entry())
+    automation = yaml.safe_load(NOTIFY.read_text())
+    assert automation["triggers"][0]["at"] == "08:30:00" and "conditions" not in automation
+    message = Template(automation["actions"][0]["data"]["message"], hass).async_render()
+    assert message.startswith("Next sun: Schneiderei from ")

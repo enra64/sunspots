@@ -37,6 +37,7 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_ALLOW_OVERPASS,
+    CONF_CLOUD_THRESHOLD_PARTLY,
     CONF_CLOUD_THRESHOLD_SUNNY,
     CONF_DATA_SOURCE,
     CONF_DEFAULT_HEIGHT,
@@ -105,6 +106,9 @@ def _hub_schema(defaults: dict[str, Any]) -> vol.Schema:
         vol.Required(
             CONF_CLOUD_THRESHOLD_SUNNY, default=defaults[CONF_CLOUD_THRESHOLD_SUNNY]
         ): _number(0, 100, 5, "%"),
+        vol.Required(
+            CONF_CLOUD_THRESHOLD_PARTLY, default=defaults[CONF_CLOUD_THRESHOLD_PARTLY]
+        ): _number(0, 100, 5, "%"),
     }
     weather = vol.Optional(CONF_WEATHER_ENTITY)
     if defaults.get(CONF_WEATHER_ENTITY):
@@ -116,6 +120,8 @@ def _hub_schema(defaults: dict[str, Any]) -> vol.Schema:
 def _validate_hub(user_input: dict[str, Any]) -> dict[str, str]:
     if user_input[CONF_DATA_SOURCE] == SOURCE_OVERPASS and not user_input[CONF_ALLOW_OVERPASS]:
         return {CONF_ALLOW_OVERPASS: "overpass_not_allowed"}
+    if user_input[CONF_CLOUD_THRESHOLD_PARTLY] < user_input[CONF_CLOUD_THRESHOLD_SUNNY]:
+        return {CONF_CLOUD_THRESHOLD_PARTLY: "partly_below_sunny"}
     return {}
 
 

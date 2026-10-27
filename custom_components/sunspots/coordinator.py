@@ -35,7 +35,12 @@ from .core.corrections import (
     match_building,
     validate_entry,
 )
-from .core.forecast import CloudGate, cloud_percent
+from .core.forecast import (
+    CloudGate,
+    DayForecast,
+    build_day_forecast,
+    cloud_percent,
+)
 from .core.horizon import FloatArray, horizon_at
 from .core.models import Building
 from .core.providers.base import ProviderError
@@ -90,6 +95,14 @@ class SpotData:
     timeline: Timeline
     window_date: date
     building_count: int
+
+
+@dataclass(slots=True)
+class DayResult:
+    """Sunlit intervals and forecast windows for one local day."""
+
+    intervals: list[tuple[datetime, datetime]]
+    forecast: DayForecast
 
 
 def local_window(now: datetime) -> tuple[datetime, datetime]:
@@ -157,6 +170,8 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         self._ticks = 0
         self.gate = CloudGate(hub.cloud_threshold_sunny)
         self.cloud: float | None = None
+        self.forecast_day: DayForecast | None = None
+        self._unsub_forecast: CALLBACK_TYPE | None = None
         self._model: SpotModel
         self._meta: SpotMeta
         self.timings: dict[str, float] = {}
@@ -184,6 +199,9 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
                 self.hass, [self.settings.weather_entity], self._async_weather_changed
             )
             self._read_weather()
+            self._unsub_forecast = self.config_entry.runtime_data.forecasts.async_subscribe(
+                self.settings.weather_entity, self._async_forecast_updated
+            )
 
     async def _load(self) -> None:
         stored = await self._store.async_load()
@@ -306,6 +324,7 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         else:
             data = await self._compute_data(now, today)
             self._dirty = False
+        self.forecast_day = self._compute_forecast(data, today)
         self._schedule(data, now)
         return data
 
@@ -327,6 +346,34 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
             today,
             self._model.building_count,
         )
+
+    def _compute_forecast(
+        self, data: SpotData, day: date, timeline: Timeline | None = None
+    ) -> DayForecast:
+        entity = self.settings.weather_entity
+        snapshot = self.config_entry.runtime_data.forecasts.snapshot(entity) if entity else None
+        start, end = local_day_bounds(day)
+        return build_day_forecast(
+            timeline or data.timeline,
+            start,
+            end,
+            snapshot.forecast if snapshot else None,
+            dt_util.get_default_time_zone(),
+            self._hub.cloud_threshold_sunny,
+            self._hub.cloud_threshold_partly,
+        )
+
+    @property
+    def forecast_resolution(self) -> str | None:
+        entity = self.settings.weather_entity
+        snapshot = self.config_entry.runtime_data.forecasts.snapshot(entity) if entity else None
+        return snapshot.forecast.resolution if snapshot and snapshot.forecast else None
+
+    @callback
+    def _async_forecast_updated(self) -> None:
+        if self.data is not None:
+            self.forecast_day = self._compute_forecast(self.data, self.data.window_date)
+            self.async_update_listeners()
 
     @callback
     def _schedule(self, data: SpotData, now: datetime) -> None:
@@ -501,18 +548,25 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
             _LOGGER.debug("Scheduled building refresh failed; keeping cached data", exc_info=True)
 
     # ----------------------------------------------------------------- forecast
-    async def async_day_intervals(self, day: date) -> list[tuple[datetime, datetime]]:
-        """Sunlit intervals for a local calendar day (computed on demand outside the window)."""
+    async def async_day(self, day: date) -> DayResult:
+        """Intervals and forecast windows for a local calendar day (computed on demand
+        when the day lies outside the two-day timeline window)."""
         start, end = local_day_bounds(day)
-        tl = self.data.timeline
-        if tl.start <= start and end <= tl.end:
-            return [(max(a, start), min(b, end)) for a, b in tl.intervals if b > start and a < end]
-        horizon = self.data.horizon
-        lat, lon = self.settings.latitude, self.settings.longitude
-        timeline = await self.hass.async_add_executor_job(
-            compute_timeline, lat, lon, horizon, start, end
-        )
-        return timeline.intervals
+        data = self.data
+        timeline = data.timeline
+        if not (timeline.start <= start and end <= timeline.end):
+            timeline = await self.hass.async_add_executor_job(
+                compute_timeline,
+                self.settings.latitude,
+                self.settings.longitude,
+                data.horizon,
+                start,
+                end,
+            )
+        intervals = [
+            (max(a, start), min(b, end)) for a, b in timeline.intervals if b > start and a < end
+        ]
+        return DayResult(intervals, self._compute_forecast(data, day, timeline))
 
     # ---------------------------------------------------------------- lifecycle
     @callback
@@ -534,8 +588,9 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
             self._unsub_check,
             self._unsub_retry,
             self._unsub_weather,
+            self._unsub_forecast,
         ):
             if unsub:
                 unsub()
         self._unsub_point = self._unsub_tick = self._unsub_check = None
-        self._unsub_retry = self._unsub_weather = None
+        self._unsub_retry = self._unsub_weather = self._unsub_forecast = None

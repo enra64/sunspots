@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date, datetime
 from typing import Any
 
@@ -12,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import SpotCoordinator, local_day_bounds
+from .core.forecast import HourRow, Window
 
 
 class SunspotsEntity(CoordinatorEntity[SpotCoordinator]):
@@ -44,6 +46,31 @@ def _local_iso(value: datetime) -> str:
     return dt_util.as_local(value).isoformat(timespec="seconds")
 
 
+def windows_attribute(windows: Iterable[Window], now: datetime) -> list[dict[str, Any]]:
+    """Windows as service/attribute data; past windows stay with ``past: true``."""
+    return [
+        {
+            "start": _local_iso(w.start),
+            "end": _local_iso(w.end),
+            "class": w.cls,
+            "past": w.end <= now,
+        }
+        for w in windows
+    ]
+
+
+def hourly_attribute(rows: Iterable[HourRow]) -> list[dict[str, Any]]:
+    return [
+        {
+            "start": _local_iso(r.start),
+            "sunlit_fraction": r.sunlit_fraction,
+            "cloud": None if r.cloud is None else round(r.cloud),
+            "class": r.cls,
+        }
+        for r in rows
+    ]
+
+
 class SpotServicesMixin:
     """Entity-service handlers; bound via ``async_register_platform_entity_service``."""
 
@@ -51,17 +78,24 @@ class SpotServicesMixin:
 
     async def async_get_sun_forecast(self, date: date | None = None) -> ServiceResponse:
         day = date or dt_util.now().date()
-        intervals = await self.coordinator.async_day_intervals(day)
+        result = await self.coordinator.async_day(day)
         start, end = local_day_bounds(day)
-        sun_seconds = sum((b - a).total_seconds() for a, b in intervals)
+        sun_seconds = sum((b - a).total_seconds() for a, b in result.intervals)
         now = dt_util.utcnow()
+        is_today = start <= now < end
         response: dict[str, Any] = {
             "date": day.isoformat(),
-            "source": "geometry",
-            "intervals": [{"start": _local_iso(a), "end": _local_iso(b)} for a, b in intervals],
+            "source": "geometry+weather" if result.forecast.forecast_available else "geometry",
+            "intervals": [
+                {"start": _local_iso(a), "end": _local_iso(b)} for a, b in result.intervals
+            ],
             "sun_hours": round(sun_seconds / 3600, 2),
+            "windows": windows_attribute(result.forecast.windows, now),
+            "hourly": hourly_attribute(result.forecast.hourly),
+            "forecast_available": result.forecast.forecast_available,
+            "forecast_resolution": self.coordinator.forecast_resolution,
         }
-        if start <= now < end:
+        if is_today:
             change = self.coordinator.data.timeline.next_change(now)
             response["sunny_now"] = self.coordinator.sunny_geometric(now)
             response["next_change"] = _local_iso(change) if change else None

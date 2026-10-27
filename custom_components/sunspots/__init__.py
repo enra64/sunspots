@@ -33,6 +33,7 @@ from .data import (
     TileCache,
     spot_store,
 )
+from .forecast_manager import ForecastManager
 from .issues import async_update_coverage_issue
 
 _LOGGER = logging.getLogger(__name__)
@@ -95,7 +96,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: SunspotsConfigEntry) -> 
     service_ = BuildingsService(
         hass, hass.data[DATA_DOMAIN].tiles, settings, str(integration.version)
     )
-    runtime = SunspotsRuntime(settings=settings, buildings=service_)
+    forecasts = ForecastManager(hass)
+    entry.async_on_unload(forecasts.async_shutdown)
+    runtime = SunspotsRuntime(settings=settings, buildings=service_, forecasts=forecasts)
     entry.runtime_data = runtime
 
     for subentry in entry.subentries.values():

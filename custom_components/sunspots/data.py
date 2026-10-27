@@ -14,6 +14,7 @@ from homeassistant.util.hass_dict import HassKey
 
 from .const import (
     CONF_ALLOW_OVERPASS,
+    CONF_CLOUD_THRESHOLD_PARTLY,
     CONF_CLOUD_THRESHOLD_SUNNY,
     CONF_DATA_SOURCE,
     CONF_DEFAULT_HEIGHT,
@@ -32,6 +33,7 @@ from .core.spot import SpotParameters
 if TYPE_CHECKING:
     from .buildings_service import BuildingsService
     from .coordinator import SpotCoordinator
+    from .forecast_manager import ForecastManager
 
 STORAGE_VERSION = 1
 STORAGE_MINOR_VERSION = 1
@@ -51,6 +53,7 @@ class HubSettings:
     default_height: float
     weather_entity: str | None
     cloud_threshold_sunny: float
+    cloud_threshold_partly: float
 
     @classmethod
     def from_options(cls, options: Mapping[str, Any]) -> HubSettings:
@@ -64,6 +67,7 @@ class HubSettings:
             default_height=float(merged[CONF_DEFAULT_HEIGHT]),
             weather_entity=merged.get(CONF_WEATHER_ENTITY) or None,
             cloud_threshold_sunny=float(merged[CONF_CLOUD_THRESHOLD_SUNNY]),
+            cloud_threshold_partly=float(merged[CONF_CLOUD_THRESHOLD_PARTLY]),
         )
 
     @property
@@ -113,6 +117,7 @@ class SunspotsRuntime:
 
     settings: HubSettings
     buildings: BuildingsService
+    forecasts: ForecastManager
     spots: dict[str, SpotCoordinator] = field(default_factory=dict)
 
 

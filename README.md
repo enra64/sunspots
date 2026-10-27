@@ -5,8 +5,8 @@ how much sun will it get today? Sunspots answers this in Home Assistant from pub
 and the position of the sun. No account, no cloud service: everything is calculated and stored
 in your own Home Assistant.
 
-> **Status: 0.1.0 pre-release.** Sun/shade geometry works; weather forecasts, the shadow map and
-> the dashboard card come in later versions. Accuracy depends on how well your area is mapped,
+> **Status: 0.2.0 pre-release.** Sun/shade geometry and the cloud-aware forecast work; the shadow map and
+> the dashboard card come in a later version. Accuracy depends on how well your area is mapped,
 > see [Accuracy](#accuracy).
 
 ## Install
@@ -29,24 +29,25 @@ Per spot (one device each):
 | `sensor.<spot>_next_change` | When the spot flips between sunny and shaded. |
 | `sensor.<spot>_sun_remaining` | Minutes of continuous sun left (0 when shaded). |
 | `sensor.<spot>_sun_hours_today` | Sunny hours for today (buildings only, local midnight to midnight). |
+| `sensor.<spot>_sun_forecast` | Rest of today: *sunny now*, *partly sunny now*, *sunny later*, *partly sunny later*, *no sun today*. Attributes: `windows` (sunny / partly / unlikely, with `past`), `best_window`, `hourly`, `forecast_available`, `forecast_resolution`. |
 | `sensor.<spot>_data_quality` | Disabled by default. Share of the skyline with measured building heights, sources, release. |
 
-Hub: `sensor.sunspots_sunny_spots` counts sunny spots (weather-aware where configured).
+Hub: `sensor.sunspots_sunny_spots` counts sunny spots (weather-aware where configured); its `next_window` attribute names the next sunny window across all spots.
 
 **Actions** (target a spot's `_sunny` entity): `sunspots.get_sun_forecast` (sunlit intervals for a
 day, returns a response), `sunspots.refresh_buildings`, `sunspots.set_building_height`,
 `sunspots.calibrate`.
 
-A "Now" dashboard is in [docs/dashboards](docs/dashboards/README.md).
+Dashboards ("Now", "Today", morning notification) are in [docs/dashboards](docs/dashboards/README.md); which weather integrations work is in [docs/weather-providers.md](docs/weather-providers.md).
 
-### Weather
+### Weather and forecast
 
 Set a weather entity in the shared settings (or per spot). Sunspots uses the entity's
 `cloud_coverage` attribute if it has one, otherwise its condition (sunny/clear-night = 0 %,
 partly cloudy = 40 %, cloudy = 90 %, fog/rain/snow/lightning = 100 %; other conditions are
 treated as unknown and the sensor then follows the geometry). The weather-aware sensor turns off
 when cloud cover exceeds the limit plus 5 points and holds each state for at least 5 minutes.
-Cloud percentage is only a rough stand-in for direct sun.
+The forecast uses hourly data when your weather entity has it, otherwise daily, otherwise only the geometry. Cloud percentage is only a rough stand-in for direct sun.
 
 ## Fixing wrong results
 

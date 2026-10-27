@@ -15,6 +15,16 @@ suite against Sunspots' real entities in a test Home Assistant instance (`tests/
 The cards have **not** been opened in a running Home Assistant UI by the maintainer's agent;
 the tile card's `state_content` option needs a recent Home Assistant (2026.10 is fine).
 
+## "Today" view (`today.yaml`)
+
+Best sun window per spot and an hour-by-hour table (sun share, cloud, ☀️/⛅/☁️) from
+`sensor.<spot>_sun_forecast`. Same validation status as above (templates rendered in tests).
+
+## Morning notification (`morning-notification.yaml`)
+
+Optional automation: at 08:30 tells you the next sunny window across all spots. Replace the notify
+service. The message template is tested; the automation itself was not run.
+
 ## Optional HACS variants
 
 - [`auto-entities`](https://github.com/thomasloven/lovelace-auto-entities): list only the sunny spots:

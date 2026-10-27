@@ -12,7 +12,8 @@
           "floor_height": "Höhe pro Stockwerk",
           "default_building_height": "Standard-Gebäudehöhe",
           "cloud_threshold_sunny": "Wolkengrenze für „sonnig“",
-          "weather_entity": "Wetter-Entität"
+          "weather_entity": "Wetter-Entität",
+          "cloud_threshold_partly": "Wolkengrenze für „teils sonnig“"
         },
         "data_description": {
           "data_source": "Overture Maps ist die Voreinstellung und verrät nur Kachelnummern. Overpass braucht die Option darunter.",
@@ -22,12 +23,14 @@
           "floor_height": "Wird genutzt, wenn nur die Stockwerkszahl bekannt ist.",
           "default_building_height": "Wird genutzt, wenn ein Gebäude weder Höhe, Stockwerke noch Typ hat.",
           "cloud_threshold_sunny": "Bewölkung bis zu diesem Wert gilt im wetterabhängigen Sensor noch als sonnig.",
-          "weather_entity": "Optionale Standard-Wetter-Entität für Wolkeninformationen."
+          "weather_entity": "Optionale Standard-Wetter-Entität für Wolkeninformationen.",
+          "cloud_threshold_partly": "Bewölkung bis zu diesem Wert (und über der „sonnig“-Grenze) gilt in der Vorhersage als teils sonnig."
         }
       }
     },
     "error": {
-      "overpass_not_allowed": "Overpass als Quelle ist nur möglich, wenn du Overpass auch erlaubst."
+      "overpass_not_allowed": "Overpass als Quelle ist nur möglich, wenn du Overpass auch erlaubst.",
+      "partly_below_sunny": "Die Grenze für „teils sonnig“ darf nicht unter der „sonnig“-Grenze liegen."
     },
     "abort": {
       "single_instance_allowed": "Sunspots ist bereits eingerichtet. Füge Orte zum bestehenden Eintrag hinzu."
@@ -45,7 +48,8 @@
           "floor_height": "Höhe pro Stockwerk",
           "default_building_height": "Standard-Gebäudehöhe",
           "cloud_threshold_sunny": "Wolkengrenze für „sonnig“",
-          "weather_entity": "Wetter-Entität"
+          "weather_entity": "Wetter-Entität",
+          "cloud_threshold_partly": "Wolkengrenze für „teils sonnig“"
         },
         "data_description": {
           "allow_overpass": "Overpass sendet die Koordinaten des Ortes an einen öffentlichen OpenStreetMap-Server."
@@ -53,7 +57,8 @@
       }
     },
     "error": {
-      "overpass_not_allowed": "Overpass als Quelle ist nur möglich, wenn du Overpass auch erlaubst."
+      "overpass_not_allowed": "Overpass als Quelle ist nur möglich, wenn du Overpass auch erlaubst.",
+      "partly_below_sunny": "Die Grenze für „teils sonnig“ darf nicht unter der „sonnig“-Grenze liegen."
     }
   },
   "selector": {
@@ -197,6 +202,16 @@
       },
       "sunny_now": {
         "name": "Sonnige Orte"
+      },
+      "sun_forecast": {
+        "name": "Sonnenvorhersage",
+        "state": {
+          "sunny_now": "Jetzt sonnig",
+          "partly": "Jetzt teils sonnig",
+          "sunny_later": "Später sonnig",
+          "partly_later": "Später teils sonnig",
+          "no_sun_today": "Heute keine Sonne"
+        }
       }
     }
   },
@@ -227,7 +242,7 @@
   "services": {
     "get_sun_forecast": {
       "name": "Sonnenvorhersage abrufen",
-      "description": "Liefert die sonnigen Zeitfenster für einen Tag.",
+      "description": "Liefert die sonnigen Zeitfenster für einen Tag sowie Klassenfenster und Stundenwerte unter Berücksichtigung der Wettervorhersage.",
       "fields": {
         "date": {
           "name": "Datum",

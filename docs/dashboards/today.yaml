@@ -1,0 +1,43 @@
+# "Today / Morning" view: when will the spots be sunny today, considering the cloud forecast?
+title: Sunspots today
+path: sunspots-today
+icon: mdi:weather-partly-cloudy
+cards:
+  - type: markdown
+    title: Best sun today
+    content: >-
+      {% set ns = namespace(n=0) %}
+      {% for s in integration_entities('sunspots')
+         if s.startswith('sensor.') and state_attr(s, 'windows') is not none %}
+      {% set ns.n = ns.n + 1 %}
+      {% set best = state_attr(s, 'best_window') %}
+      {% set name = state_attr(s, 'friendly_name') | replace(' Sun forecast', '') %}
+      {% if best %}
+      - **{{ name }}**: {{ 'sunny' if best['class'] == 'sunny' else 'partly sunny' }}
+        {{ as_timestamp(best['start']) | timestamp_custom('%H:%M') }}–{{ as_timestamp(best['end']) | timestamp_custom('%H:%M') }}
+      {% else %}
+      - **{{ name }}**: no sun left today
+      {% endif %}
+      {% endfor %}
+      {% if ns.n == 0 %}No Sunspots spots set up yet.{% endif %}
+
+  - type: markdown
+    title: Hour by hour
+    content: >-
+      {% for s in integration_entities('sunspots')
+         if s.startswith('sensor.') and state_attr(s, 'hourly') is not none %}
+      **{{ state_attr(s, 'friendly_name') | replace(' Sun forecast', '') }}**
+
+      | Hour | Sun | Cloud | |
+      |---|---|---|---|
+      {% for row in state_attr(s, 'hourly') -%}
+      | {{ as_timestamp(row['start']) | timestamp_custom('%H:00') }} | {{ (row['sunlit_fraction'] * 100) | round(0) | int }} % | {{ row['cloud'] if row['cloud'] is not none else '?' }} | {{ {'sunny': '☀️', 'partly': '⛅', 'unlikely': '☁️'}[row['class']] }} |
+      {% endfor %}
+      {% endfor %}
+
+  # Single-spot variant (replace the entity id with yours).
+  - type: tile
+    entity: sensor.cafe_schneiderei_sun_forecast
+    state_content:
+      - state
+      - best_window

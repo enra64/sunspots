@@ -1,0 +1,20 @@
+# Morning notification: tell me at 08:30 where it will be sunny today.
+# Replace notify.mobile_app_phone with your notify service.
+alias: Sunspots morning summary
+triggers:
+  - trigger: time
+    at: "08:30:00"
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      title: "Sunspots"
+      message: >-
+        {% set w = state_attr('sensor.sunspots_sunny_spots', 'next_window') %}
+        {% if w %}
+        Next sun: {{ w['spot'] }} from {{ as_timestamp(w['start']) | timestamp_custom('%H:%M') }}
+        to {{ as_timestamp(w['end']) | timestamp_custom('%H:%M') }}
+        ({{ 'sunny' if w['class'] == 'sunny' else 'partly sunny' }}).
+        {% else %}
+        No sun expected at your spots today.
+        {% endif %}
+mode: single

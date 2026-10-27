@@ -31,7 +31,14 @@ async def test_setup_entities_unique_ids_and_states(hass, fake_fetcher, freezer)
     unique_ids = {e.unique_id for e in er.async_entries_for_config_entry(registry, entry.entry_id)}
     assert unique_ids == {
         f"{subentry_id}_{key}"
-        for key in ("sunny", "next_change", "sun_remaining", "sun_hours_today", "data_quality")
+        for key in (
+            "sunny",
+            "next_change",
+            "sun_remaining",
+            "sun_hours_today",
+            "sun_forecast",
+            "data_quality",
+        )
     } | {f"{entry.entry_id}_sunny_now"}
 
     sunny = hass.states.get("binary_sensor.schneiderei_sunny")

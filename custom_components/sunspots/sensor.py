@@ -18,8 +18,9 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import SpotCoordinator, local_day_bounds
+from .core.forecast import best_window, forecast_state
 from .data import SunspotsConfigEntry
-from .entity import SunspotsEntity
+from .entity import SunspotsEntity, hourly_attribute, windows_attribute
 
 PARALLEL_UPDATES = 0
 
@@ -36,6 +37,7 @@ async def async_setup_entry(
                 NextChangeSensor(coordinator),
                 SunRemainingSensor(coordinator),
                 SunHoursTodaySensor(coordinator),
+                SunForecastSensor(coordinator),
                 DataQualitySensor(coordinator),
             ],
             config_subentry_id=subentry_id,
@@ -92,6 +94,45 @@ class SunHoursTodaySensor(SunspotsEntity, SensorEntity):
         start, end = local_day_bounds(dt_util.now().date())
         total = self.coordinator.data.timeline.sun_time(start, end)
         return round(total / timedelta(hours=1), 2)
+
+
+FORECAST_STATES = ["sunny_now", "partly", "sunny_later", "partly_later", "no_sun_today"]
+
+
+class SunForecastSensor(SunspotsEntity, SensorEntity):
+    """What the rest of today looks like: geometry combined with the cloud forecast."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = FORECAST_STATES
+    _unrecorded_attributes = frozenset({"windows", "best_window", "hourly"})
+
+    def __init__(self, coordinator: SpotCoordinator) -> None:
+        super().__init__(coordinator, "sun_forecast")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.forecast_day is not None
+
+    @property
+    def native_value(self) -> str | None:
+        day = self.coordinator.forecast_day
+        return forecast_state(day.windows, dt_util.utcnow()) if day else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        day = self.coordinator.forecast_day
+        if day is None:
+            return None
+        now = dt_util.utcnow()
+        best = best_window(day.windows, now)
+        return {
+            "windows": windows_attribute(day.windows, now),
+            "best_window": windows_attribute([best], now)[0] if best else None,
+            "hourly": hourly_attribute(day.hourly),
+            "forecast_available": day.forecast_available,
+            "forecast_resolution": self.coordinator.forecast_resolution,
+            "source_entity": self.coordinator.settings.weather_entity,
+        }
 
 
 class DataQualitySensor(SunspotsEntity, SensorEntity):
@@ -165,7 +206,26 @@ class SunnyNowSensor(SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         registry = er.async_get(self.hass)
         sunny = self._sunny_spots()
+        now = dt_util.utcnow()
+        upcoming = [
+            (w, c)
+            for c in self._entry.runtime_data.spots.values()
+            if c.forecast_day is not None
+            for w in c.forecast_day.windows
+            if w.cls in ("sunny", "partly") and w.end > now
+        ]
+        upcoming.sort(key=lambda item: (item[0].cls != "sunny", item[0].start))
+        next_window = None
+        if upcoming:
+            w, c = upcoming[0]
+            next_window = {
+                "spot": c.settings.name,
+                "start": dt_util.as_local(w.start).isoformat(timespec="seconds"),
+                "end": dt_util.as_local(w.end).isoformat(timespec="seconds"),
+                "class": w.cls,
+            }
         return {
+            "next_window": next_window,
             "spots": [c.settings.name for c in sunny],
             "entity_ids": [
                 eid
