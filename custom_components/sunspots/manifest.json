@@ -1,15 +1,22 @@
 {
   "domain": "sunspots",
   "name": "Sunspots",
-  "categories": ["weather_alerts"],
-  "codeowners": ["@enra64"],
+  "codeowners": [
+    "@enra64"
+  ],
   "config_flow": true,
-  "dependencies": ["http", "frontend"],
+  "dependencies": [
+    "http",
+    "frontend"
+  ],
   "documentation": "https://github.com/enra64/sunspots",
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/enra64/sunspots/issues",
-  "requirements": ["pmtiles==3.8.1", "numpy"],
+  "requirements": [
+    "pmtiles==3.8.1",
+    "numpy"
+  ],
   "single_config_entry": true,
   "version": "1.1.0"
 }
