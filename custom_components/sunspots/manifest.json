@@ -1,7 +1,7 @@
 {
   "domain": "sunspots",
   "name": "Sunspots",
-  "categories": ["weather_alerts.forecasts"],
+  "categories": ["weather_alerts"],
   "codeowners": ["@enra64"],
   "config_flow": true,
   "dependencies": ["http", "frontend"],
