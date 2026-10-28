@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 (pre-release)
+
+- Card editor: the mode field is now called "Display mode" ("Anzeigemodus") instead of "Card view", so it is recognisable as the overview / timeline / shadow map switch.
+
 ## 1.2.0 (pre-release)
 
 New: timeline options `show_today`, `show_tomorrow`, `full_day`; visual editors for `sunspots-card` and `sunspots-shadow-card`; reconfiguring a spot keeps only real overrides of the shared settings.
