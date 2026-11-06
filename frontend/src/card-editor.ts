@@ -1,7 +1,7 @@
 import { cardFormData, normalizeCardConfig } from "./editor-config";
 import { type EditorSpec, FormEditor } from "./editor-element";
 import { cardSchema, modeOf } from "./editor-schema";
-import { defineOnce } from "./register";
+import { defineElement } from "./register";
 
 const SPEC: EditorSpec = {
   schema: cardSchema,
@@ -14,4 +14,4 @@ class SunspotsCardEditor extends FormEditor {
   protected override readonly spec = SPEC;
 }
 
-defineOnce(customElements, "sunspots-card-editor", SunspotsCardEditor);
+defineElement("sunspots-card-editor", SunspotsCardEditor);

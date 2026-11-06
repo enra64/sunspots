@@ -1,7 +1,7 @@
 import { type EditorSpec, FormEditor } from "./editor-element";
 import { normalizeShadowConfig, shadowFormData } from "./editor-config";
 import { shadowSchema } from "./editor-schema";
-import { defineOnce } from "./register";
+import { defineElement } from "./register";
 
 const SPEC: EditorSpec = {
   schema: shadowSchema,
@@ -14,4 +14,4 @@ class SunspotsShadowCardEditor extends FormEditor {
   protected override readonly spec = SPEC;
 }
 
-defineOnce(customElements, "sunspots-shadow-card-editor", SunspotsShadowCardEditor);
+defineElement("sunspots-shadow-card-editor", SunspotsShadowCardEditor);

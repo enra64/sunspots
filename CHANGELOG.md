@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2 (pre-release)
+
+- Fix: "Custom element not found: sunspots-card" on some page loads. Home Assistant loads its own bundle and the card in parallel; when the card won the race, it was defined before HA's scoped-registry polyfill took over `customElements`, and the polyfill then did not know the card. The card now re-registers itself through the polyfill when it appears later. If the card still cannot be seen by `customElements.get`, it logs a console warning saying so.
+
 ## 1.2.1 (pre-release)
 
 - Card editor: the mode field is now called "Display mode" ("Anzeigemodus") instead of "Card view", so it is recognisable as the overview / timeline / shadow map switch.
