@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
+import probatio as vol
 import pytest
 from homeassistant.components.frontend import DATA_EXTRA_MODULE_URL
 from homeassistant.components.image import async_get_image
@@ -144,3 +145,25 @@ async def test_shadow_map_service_also_updates_after_midnight_boundary(hass, fak
         DOMAIN, "render_shadow_map", {"entity_id": ENTITY}, blocking=True, return_response=True
     )
     assert resp[ENTITY]["time"].startswith("2026-06-22T12:00")
+
+
+async def test_zoom_narrows_the_drawn_area(hass, fake_fetcher, freezer):
+    freezer.move_to(SUNNY_MORNING)
+    await setup(hass, make_entry())
+
+    async def render(**extra):
+        response = await hass.services.async_call(
+            DOMAIN,
+            "render_shadow_map",
+            {"entity_id": ENTITY, **extra},
+            blocking=True,
+            return_response=True,
+        )
+        return response[ENTITY]["svg"]
+
+    wide = await render()
+    zoomed = await render(zoom=2)
+    assert wide != zoomed
+    assert ET.fromstring(zoomed).tag.endswith("svg")
+    with pytest.raises(vol.Invalid):
+        await render(zoom=0.5)

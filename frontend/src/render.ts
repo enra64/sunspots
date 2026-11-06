@@ -56,12 +56,15 @@ export function renderShadowMapMessage(
   entityId: string,
   isoTime: string | undefined,
   theme: Theme,
+  zoom = 1,
 ): Record<string, unknown> {
+  const data: Record<string, unknown> = isoTime === undefined ? { theme } : { time: isoTime, theme };
+  if (zoom !== 1) data["zoom"] = zoom;
   return {
     type: "call_service",
     domain: "sunspots",
     service: "render_shadow_map",
-    service_data: isoTime === undefined ? { theme } : { time: isoTime, theme },
+    service_data: data,
     target: { entity_id: entityId },
     return_response: true,
   };

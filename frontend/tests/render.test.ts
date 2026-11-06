@@ -67,3 +67,10 @@ describe("websocket helpers", () => {
     expect(errorMessage(42)).toBe("unknown error");
   });
 });
+
+describe("zoom", () => {
+  it("sends the zoom only when it is not 1", () => {
+    expect(renderShadowMapMessage(ID, undefined, "light", 2)["service_data"]).toEqual({ theme: "light", zoom: 2 });
+    expect(renderShadowMapMessage(ID, undefined, "light", 1)["service_data"]).toEqual({ theme: "light" });
+  });
+});

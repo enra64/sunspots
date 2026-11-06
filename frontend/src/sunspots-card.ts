@@ -28,12 +28,14 @@ class SunspotsCard extends LitElement {
     _config: { state: true },
     _mapState: { state: true },
     _minute: { state: true },
+    _zoom: { state: true },
   };
 
   declare hass: Hass | undefined;
   declare _config: CardConfig | undefined;
   declare _mapState: MapState;
   declare _minute: number | undefined;
+  declare _zoom: number;
 
   private readonly loader = new MapLoader(
     () => this.hass,
@@ -50,6 +52,7 @@ class SunspotsCard extends LitElement {
   constructor() {
     super();
     this._mapState = { status: "idle" };
+    this._zoom = 1;
   }
 
   static getStubConfig(hass: Hass, entities: string[]): Record<string, unknown> {
@@ -112,6 +115,7 @@ class SunspotsCard extends LitElement {
       entityId,
       isoTime: wallMinutesToIso(this._minute, this.dayStart),
       theme: resolveTheme("auto", hass),
+      zoom: this._zoom,
     });
   }
 
@@ -121,6 +125,12 @@ class SunspotsCard extends LitElement {
     this.mapKey = undefined;
     this.mapEntity = undefined;
     this._minute = undefined;
+    this._zoom = 1;
+  }
+
+  private onZoom(level: number): void {
+    this._zoom = level;
+    this.loadMap();
   }
 
   private onSlide(event: Event): void {
@@ -211,7 +221,7 @@ class SunspotsCard extends LitElement {
     const state = this._mapState;
     const minute = this._minute ?? map.initialMinute;
     const time = renderedTimeLabel(state, map, hass, lang, minute);
-    return html`${renderMapBox(state, map, time, lang)}
+    return html`${renderMapBox(state, map, time, lang, { level: this._zoom, onChange: (level) => this.onZoom(level) })}
     ${renderSlider(map, minute, lang, (event) => this.onSlide(event))}
     ${renderCaption(state, map, time, lang)}`;
   }

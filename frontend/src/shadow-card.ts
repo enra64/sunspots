@@ -20,6 +20,7 @@ class SunspotsShadowCard extends LitElement {
     _config: { state: true },
     _mapState: { state: true },
     _minute: { state: true },
+    _zoom: { state: true },
   };
 
   declare hass: Hass | undefined;
@@ -27,6 +28,7 @@ class SunspotsShadowCard extends LitElement {
   declare _mapState: MapState;
   /** Slider position; undefined shows the current moment. */
   declare _minute: number | undefined;
+  declare _zoom: number;
 
   private readonly loader = new MapLoader(
     () => this.hass,
@@ -42,6 +44,7 @@ class SunspotsShadowCard extends LitElement {
   constructor() {
     super();
     this._mapState = { status: "idle" };
+    this._zoom = 1;
   }
 
   static getStubConfig(hass: Hass, entities: string[]): Record<string, unknown> {
@@ -57,6 +60,7 @@ class SunspotsShadowCard extends LitElement {
     this.stop();
     this.loader.reset();
     this._minute = undefined;
+    this._zoom = 1;
     this.loadedKey = undefined;
     if (this.isConnected) this.arm();
   }
@@ -117,11 +121,17 @@ class SunspotsShadowCard extends LitElement {
       entityId: config.entity,
       isoTime: this._minute === undefined ? undefined : wallMinutesToIso(this._minute, dayStart),
       theme: resolveTheme(config.theme, hass),
+      zoom: this._zoom,
     });
   }
 
   private onRefresh(): void {
     this._minute = undefined;
+    this.load();
+  }
+
+  private onZoom(level: number): void {
+    this._zoom = level;
     this.load();
   }
 
@@ -144,7 +154,7 @@ class SunspotsShadowCard extends LitElement {
     const time = renderedTimeLabel(state, map, hass, lang, minute);
     return html`<ha-card .header=${title}>
       <div class="content">
-        ${renderMapBox(state, map, time, lang)}
+        ${renderMapBox(state, map, time, lang, { level: this._zoom, onChange: (level) => this.onZoom(level) })}
         ${config.showSlider ? renderSlider(map, minute, lang, (event) => this.onSlide(event)) : nothing}
         <div class="footer">
           <div class="caption">${renderCaption(state, map, time, lang)}</div>

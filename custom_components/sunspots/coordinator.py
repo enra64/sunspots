@@ -633,8 +633,14 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
         return self._day_in_window(data, day, timeline)
 
     # ------------------------------------------------------------------ shadow map
-    async def async_render_map(self, when: datetime, theme: str = "light") -> MapResult:
-        """Render the shadow view for an instant (CPU work in the executor)."""
+    async def async_render_map(
+        self, when: datetime, theme: str = "light", zoom: float = 1.0
+    ) -> MapResult:
+        """Render the shadow view for an instant (CPU work in the executor).
+
+        ``zoom`` > 1 shows a smaller area around the spot (radius / zoom); buildings are only
+        loaded within the configured radius, so there is no zooming out beyond it.
+        """
         when = when.astimezone(UTC)
         az, el = sun_position(self.settings.latitude, self.settings.longitude, when)
         texts = MAP_TEXT.get(self.hass.config.language.split("-")[0], MAP_TEXT["en"])
@@ -657,12 +663,12 @@ class SpotCoordinator(DataUpdateCoordinator[SpotData]):
             heights, sources = resolve_all(buildings, params.heights, overrides)
             shadows = shadow_polygons(buildings, heights, az, el, params.h_obs, params.radius)
             svg = ""
-            for zoom in MAP_ZOOM_STEPS:
+            for step in MAP_ZOOM_STEPS:
                 svg = to_svg(
                     buildings,
                     sources,
                     shadows,
-                    radius=params.radius * zoom,
+                    radius=params.radius / zoom * step,
                     sun_azimuth=az,
                     sun_elevation=el,
                     caption=caption,

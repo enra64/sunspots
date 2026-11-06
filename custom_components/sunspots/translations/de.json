@@ -340,6 +340,10 @@
         "theme": {
           "name": "Design",
           "description": "Farben des Bildes: hell oder dunkel."
+        },
+        "zoom": {
+          "name": "Zoom",
+          "description": "Vergrößerung: 2 zeigt den halben Radius um den Platz. 1 zeigt den gesamten eingestellten Radius."
         }
       }
     }

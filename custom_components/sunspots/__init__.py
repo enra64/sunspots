@@ -97,6 +97,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         {
             vol.Optional("time"): cv.datetime,
             vol.Optional("theme", default="light"): vol.In(["light", "dark"]),
+            vol.Optional("zoom", default=1.0): vol.All(vol.Coerce(float), vol.Range(min=1, max=8)),
         },
         "async_render_shadow_map",
         SupportsResponse.ONLY,

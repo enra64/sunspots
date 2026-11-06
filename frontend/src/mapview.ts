@@ -18,12 +18,58 @@ export function renderedTimeLabel(state: MapState, map: MapModel, hass: Hass, la
   return minute !== undefined ? formatWhen(minute, lang) : info.time;
 }
 
+export const ZOOM_LEVELS = [1, 2, 4] as const;
+
+/** The next level in `direction` (+1 closer, -1 farther), or the current one at either end. */
+export function stepZoom(level: number, direction: 1 | -1): number {
+  const index = ZOOM_LEVELS.findIndex((candidate) => candidate >= level);
+  const current = index === -1 ? ZOOM_LEVELS.length - 1 : index;
+  return ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, Math.max(0, current + direction))] ?? 1;
+}
+
+export interface ZoomControl {
+  level: number;
+  onChange: (level: number) => void;
+}
+
+function renderZoomButtons(zoom: ZoomControl, t: ReturnType<typeof translator>): TemplateResult {
+  const first = Math.min(...ZOOM_LEVELS);
+  const last = Math.max(...ZOOM_LEVELS);
+  return html`<div class="zoom" role="group">
+    <button
+      type="button"
+      title=${t("zoom_in")}
+      aria-label=${t("zoom_in")}
+      ?disabled=${zoom.level >= last}
+      @click=${() => zoom.onChange(stepZoom(zoom.level, 1))}
+    >
+      <ha-icon icon="mdi:plus"></ha-icon>
+    </button>
+    <button
+      type="button"
+      title=${t("zoom_out")}
+      aria-label=${t("zoom_out")}
+      ?disabled=${zoom.level <= first}
+      @click=${() => zoom.onChange(stepZoom(zoom.level, -1))}
+    >
+      <ha-icon icon="mdi:minus"></ha-icon>
+    </button>
+  </div>`;
+}
+
 /** The image (only ever as `<img src=blob:...>`), the loading overlay and the error message. */
-export function renderMapBox(state: MapState, map: MapModel, time: string, lang: string): TemplateResult {
+export function renderMapBox(
+  state: MapState,
+  map: MapModel,
+  time: string,
+  lang: string,
+  zoom?: ZoomControl,
+): TemplateResult {
   const t = translator(lang);
   const url = state.status === "ready" || state.status === "loading" ? state.url : undefined;
   return html`<div class="mapbox" aria-busy=${state.status === "loading" ? "true" : "false"}>
     ${url ? html`<img src=${url} alt=${t("map_alt", { name: map.name, time })} />` : nothing}
+    ${zoom && url ? renderZoomButtons(zoom, t) : nothing}
     ${state.status === "loading" ? html`<div class="overlay" role="status">${t("map_loading")}</div>` : nothing}
     ${state.status === "error" ? html`<div class="error" role="alert">${state.message}</div>` : nothing}
   </div>`;
@@ -91,6 +137,35 @@ export const mapStyles = css`
     display: block;
     width: 100%;
     height: auto;
+  }
+  .zoom {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .zoom button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--divider-color);
+    border-radius: 50%;
+    background: var(--card-background-color);
+    color: var(--primary-text-color);
+    cursor: pointer;
+  }
+  .zoom button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .zoom button:not(:disabled):hover,
+  .zoom button:focus-visible {
+    background: var(--secondary-background-color);
   }
   .overlay,
   .mapbox .error {

@@ -340,6 +340,10 @@
         "theme": {
           "name": "Theme",
           "description": "Colours of the picture: light or dark."
+        },
+        "zoom": {
+          "name": "Zoom",
+          "description": "Magnification: 2 shows half the radius around the spot. 1 shows the whole configured radius."
         }
       }
     }

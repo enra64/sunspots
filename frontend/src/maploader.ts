@@ -15,6 +15,8 @@ export interface MapRequest {
   /** Local ISO time; omitted for "now". */
   isoTime: string | undefined;
   theme: Theme;
+  /** 1 shows the whole radius; 2 half of it, and so on. */
+  zoom?: number;
 }
 
 class MapRejected extends Error {
@@ -77,7 +79,7 @@ export class MapLoader {
     const hass = this.getHass();
     if (!hass) throw new Error("not ready");
     const raw = await hass.connection.sendMessagePromise<unknown>(
-      renderShadowMapMessage(request.entityId, request.isoTime, request.theme),
+      renderShadowMapMessage(request.entityId, request.isoTime, request.theme, request.zoom),
     );
     const parsed = parseRenderResponse(raw, request.entityId);
     if (!parsed.ok) throw new MapRejected(parsed.reason);

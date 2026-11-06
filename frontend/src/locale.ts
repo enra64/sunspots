@@ -28,6 +28,8 @@ export interface Strings {
   refresh: string;
   map_time: string;
   map_alt: string;
+  zoom_in: string;
+  zoom_out: string;
   map_loading: string;
   map_error: string;
   map_too_large: string;
@@ -102,6 +104,8 @@ const en: Strings = {
   refresh: "Refresh",
   map_time: "Shown for {time}",
   map_alt: "Shadow map of {name} at {time}",
+  zoom_in: "Zoom in",
+  zoom_out: "Zoom out",
   map_loading: "Loading map…",
   map_error: "The map could not be loaded: {message}",
   map_too_large: "The map is too large to display.",
@@ -172,6 +176,8 @@ const de: Strings = {
   refresh: "Aktualisieren",
   map_time: "Dargestellt für {time}",
   map_alt: "Schattenkarte von {name} um {time}",
+  zoom_in: "Vergrößern",
+  zoom_out: "Verkleinern",
   map_loading: "Karte wird geladen …",
   map_error: "Die Karte konnte nicht geladen werden: {message}",
   map_too_large: "Die Karte ist zu groß für die Anzeige.",

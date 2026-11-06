@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0 (pre-release)
+
+- New: zoom buttons (+ / −, 1×/2×/4×) on the map view of `sunspots-card` and on `sunspots-shadow-card`. The map is re-rendered around the spot at half or a quarter of the configured radius. `sunspots.render_shadow_map` has a new `zoom` field (1–8, default 1).
+
 ## 1.2.2 (pre-release)
 
 - Fix: "Custom element not found: sunspots-card" on some page loads. Home Assistant loads its own bundle and the card in parallel; when the card won the race, it was defined before HA's scoped-registry polyfill took over `customElements`, and the polyfill then did not know the card. The card now re-registers itself through the polyfill when it appears later. If the card still cannot be seen by `customElements.get`, it logs a console warning saying so.
